@@ -1,0 +1,28 @@
+group = 'org.to2mbn'
+version = '0.0.1-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+buildscript {
+	repositories {
+		jcenter()
+		maven { url 'https://repo.spring.io/snapshot' }
+		maven { url 'https://repo.spring.io/milestone' }
+	}
+	dependencies {
+		classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.0.0.BUILD-SNAPSHOT'
+	}
+}
+
+repositories {
+	jcenter()
+	maven { url 'https://repo.spring.io/snapshot' }
+	maven { url 'https://repo.spring.io/milestone' }
+}
+
+dependencies {
+	compile 'org.springframework.boot:spring-boot-starter-webflux'
+	compile 'commons-io:commons-io:2.6'
+}

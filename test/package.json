@@ -1,0 +1,25 @@
+{
+	"name": "yggdrasil-test",
+	"version": "0.0.1",
+	"description": "Yggdrasil API integration test",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/to2mbn/yggdrasil-mock.git"
+	},
+	"scripts": {
+		"integration-test":"mocha src/test",
+		"test": "eslint src/** yggdrasil-config.js"
+	},
+	"author": "yushijinhun",
+	"license": "GPL-3.0",
+	"devDependencies": {
+		"eslint": "^4.13.0",
+		"eslint-plugin-mocha": "^4.11.0"
+	},
+	"dependencies": {
+		"chai": "^4.1.2",
+		"mocha": "^4.0.1",
+		"supertest": "^3.0.0",
+		"ursa": "^0.9.4"
+	}
+}
