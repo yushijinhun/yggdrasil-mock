@@ -13,7 +13,7 @@ describe("yggdrasil extension api", function () {
 				expect(response).to.be.an("object").that.has.all.keys("meta", "skinDomains", "signaturePublickey");
 				expect(response.meta).to.be.an("object");
 				expect(response.skinDomains).to.be.an("array");
-				expect(response.signaturePublickey).to.be.an("string");
+				expect(response.signaturePublickey).to.be.a("string");
 			})
 			.end(done);
 	});
@@ -31,5 +31,5 @@ describe("yggdrasil extension api", function () {
 	it("should have valid skin domains", () =>
 		response.skinDomains.every(domain =>
 			expect(domain).to.be.a("string").that.satisfies(it =>
-				 it.startsWith("."), "domain should start with a dot")));
+				it.startsWith("."), "domain should start with a dot")));
 });
