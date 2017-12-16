@@ -2,6 +2,7 @@ let request = require("../request");
 let ursa = require("ursa");
 let chai = require("chai");
 let expect = chai.expect;
+let YggdrasilVerifier = require("../yggdrasil-verify");
 
 describe("yggdrasil extension api", function () {
 	let response;
@@ -32,4 +33,16 @@ describe("yggdrasil extension api", function () {
 		response.skinDomains.every(domain =>
 			expect(domain).to.be.a("string").that.satisfies(it =>
 				it.startsWith("."), "domain should start with a dot")));
+});
+
+describe("yggdrasil basic api", function () {
+	let verify;
+	before(done => {
+		request.get("/")
+			.expect(200)
+			.expect(res => verify = new YggdrasilVerifier(res.body))
+			.end(done);
+	});
+	// TODO
+	it("// TODO");
 });
