@@ -1,0 +1,19 @@
+yggdrasil:
+  database:
+    users:
+    - email: test1@to2mbn.org
+      password: 111111
+    - email: test2@to2mbn.org
+      password: 222222
+      characters:
+      - name: character1
+        model: STEVE
+      - name: character2
+        uuid: d79f28d8-a717-47f4-aeb4-8ae45bf2e2fe
+        model: STEVE
+        textures:
+          SKIN: https:///
+          CAPE: https:///
+  token:
+    time-to-partially-expired: 10m
+    time-to-fully-expired: 20m
