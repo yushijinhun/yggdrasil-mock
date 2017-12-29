@@ -1,8 +1,15 @@
 package org.to2mbn.yggdrasil.mockserver;
 
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
+import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.randomUnsignedUUID;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.to2mbn.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilCharacter;
 import org.to2mbn.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilUser;
@@ -18,6 +25,8 @@ public class TokenStore {
 		private Optional<YggdrasilCharacter> boundCharacter;
 		private YggdrasilUser user;
 		private boolean revoked;
+
+		private Token() {}
 
 		public boolean isValid() {
 			return !revoked && System.currentTimeMillis() < createdAt + timeToPartiallyExpired.toMillis();
@@ -50,10 +59,50 @@ public class TokenStore {
 		public boolean isRevoked() {
 			return revoked;
 		}
+
+		public void revoke() {
+			if (!revoked) {
+				revoked = true;
+				accessToken2token.remove(accessToken);
+			}
+		}
 	}
 
 	private Duration timeToPartiallyExpired;
 	private Duration timeToFullyExpired;
+
+	private Map<String, Token> accessToken2token = new ConcurrentHashMap<>();
+
+	public Optional<Token> findToken(String accessToken) {
+		Token token = accessToken2token.get(accessToken);
+		if (token != null && !token.isRefreshable() && !token.isValid()) {
+			accessToken2token.remove(accessToken);
+			return empty();
+		}
+		return ofNullable(token);
+	}
+
+	public Token acquireToken(YggdrasilUser user, @Nullable String clientToken) {
+		Token token = new Token();
+		token.accessToken = randomUnsignedUUID();
+		if (user.getCharacters().size() == 1) {
+			token.boundCharacter = of(user.getCharacters().get(0));
+		} else {
+			token.boundCharacter = empty();
+		}
+		token.clientToken = clientToken == null ? randomUnsignedUUID() : clientToken;
+		token.createdAt = System.currentTimeMillis();
+		token.revoked = false;
+		token.user = user;
+		accessToken2token.put(token.accessToken, token);
+		return token;
+	}
+
+	public void revokeAll(YggdrasilUser user) {
+		accessToken2token.values().stream()
+				.filter(token -> token.user == user)
+				.forEach(Token::revoke);
+	}
 
 	public Duration getTimeToPartiallyExpired() {
 		return timeToPartiallyExpired;

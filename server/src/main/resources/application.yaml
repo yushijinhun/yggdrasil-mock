@@ -8,12 +8,25 @@ yggdrasil:
       characters:
       - name: character1
         model: STEVE
+        textures:
+          SKIN: https:///
+          CAPE: https:///
+    - email: test3@to2mbn.org
+      password: 333333
+      characters:
       - name: character2
-        uuid: d79f28d8-a717-47f4-aeb4-8ae45bf2e2fe
         model: STEVE
         textures:
           SKIN: https:///
+      - name: character3
+        model: ALEX
+        textures:
           CAPE: https:///
   token:
     time-to-partially-expired: 10m
     time-to-fully-expired: 20m
+  core:
+    skinDomains:
+    - .to2mbn.org
+  rate-limit:
+    limit-duration: 1000ms

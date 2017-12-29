@@ -1,8 +1,14 @@
+
 package org.to2mbn.yggdrasil.mockserver;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Map.entry;
+import static java.util.Map.ofEntries;
 import static java.util.Optional.ofNullable;
+import static org.to2mbn.yggdrasil.mockserver.PropertiesUtils.base64Encoded;
+import static org.to2mbn.yggdrasil.mockserver.PropertiesUtils.properties;
+import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.unsign;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,6 +76,34 @@ public class YggdrasilDatabase {
 		public void setOwner(YggdrasilUser owner) {
 			this.owner = owner;
 		}
+
+		public Map<String, Object> toSimpleResponse() {
+			return
+			// @formatter:off
+			ofEntries(
+				entry("id", unsign(uuid)),
+				entry("name", name)
+			);
+			// @formatter:on
+		}
+
+		public Map<String, Object> toCompleteResponse(boolean signed) {
+			return
+			// @formatter:off
+			ofEntries(
+				entry("id", unsign(uuid)),
+				entry("name", name),
+				entry("properties", properties(signed,
+					entry("textures", base64Encoded(
+						entry("timestamp", System.currentTimeMillis()),
+						entry("profileId", unsign(uuid)),
+						entry("profileName", name),
+						entry("textures", textures)
+					))
+				))
+			);
+			// @formatter:on
+		}
 	}
 
 	public static class YggdrasilUser {
@@ -108,6 +142,18 @@ public class YggdrasilDatabase {
 
 		public void setCharacters(List<YggdrasilCharacter> characters) {
 			this.characters = characters;
+		}
+
+		public Map<String, Object> toResponse() {
+			return
+			// @formatter:off
+			ofEntries(
+				entry("id", unsign(id)),
+				entry("properties", properties(
+					// TODO preferredLanguage?
+				))
+			);
+			// @formatter:on
 		}
 	}
 
