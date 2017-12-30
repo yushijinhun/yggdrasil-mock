@@ -1,3 +1,4 @@
+sudo: false
 language: generic
 script:
 - ./build.sh --travis
