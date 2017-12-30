@@ -2,7 +2,9 @@
 set -xem
 cd server
 if [[ "$1" == "--travis" ]];then
+	set +x
 	source /opt/jdk_switcher/jdk_switcher.sh
+	set -x
 	export GRADLE_OPTS="-Dorg.gradle.console=plain"
 	jdk_switcher use oraclejdk8
 	gradle wrapper --gradle-version 4.4.1
