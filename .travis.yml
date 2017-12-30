@@ -1,5 +1,5 @@
 language: generic
 script:
 - jdk_switcher use oraclejdk9
-- export GRADLE_OPTS="--console plain"
+- export GRADLE_OPTS="-Dorg.gradle.console=plain"
 - ./build.sh
