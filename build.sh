@@ -5,11 +5,10 @@ if [[ "$1" == "--travis" ]];then
 	set +x
 	source /opt/jdk_switcher/jdk_switcher.sh
 	set -x
-	export GRADLE_OPTS="-Dorg.gradle.console=plain"
 	jdk_switcher use oraclejdk8
-	gradle wrapper --gradle-version 4.4.1
+	TERM=dumb gradle wrapper --gradle-version 4.4.1
 	jdk_switcher use oraclejdk9
-	./gradlew clean bootJar
+	TERM=dumb ./gradlew clean bootJar
 else
 	gradle clean bootJar
 fi
