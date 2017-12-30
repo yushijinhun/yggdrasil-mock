@@ -1,2 +1,5 @@
 language: generic
-script: ./build.sh
+script:
+- jdk_switcher use oraclejdk9
+- export GRADLE_OPTS="--console plain"
+- ./build.sh
