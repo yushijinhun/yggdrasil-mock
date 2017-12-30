@@ -5,6 +5,8 @@ let expect = chai.expect;
 let YggdrasilVerifier = require("../yggdrasil-verify");
 let config = require("../../yggdrasil-config");
 
+const slowTime = 500; // ms
+
 let delay = (time) => (result) => new Promise(resolve => setTimeout(() => resolve(result), time));
 
 let agent = {
@@ -67,9 +69,70 @@ describe("yggdrasil basic api", function () {
 			.end(done);
 	});
 
-	describe("authenticate", function () {
-		this.slow(config.rateLimits.login + 500);
+	function authenticateUser1() {
+		return request.post("/authserver/authenticate")
+			.send({
+				username: config.data.user1.email,
+				password: config.data.user1.password,
+				requestUser: true,
+				agent: agent
+			})
+			.expect(200)
+			.expect(res => {
+				let response = res.body;
+				verify.verifyAuthenticateResponse(response);
+				expect(response.availableProfiles).to.be.empty;
+				expect(response.selectedProfile).to.not.exist;
+				expect(response.user).to.exist;
+			})
+			.then(res => res.body)
+			.then(delay(config.rateLimits.login));
+	}
 
+	function authenticateUser2() {
+		return request.post("/authserver/authenticate")
+			.send({
+				username: config.data.user2.email,
+				password: config.data.user2.password,
+				requestUser: true,
+				agent: agent
+			})
+			.expect(200)
+			.expect(res => {
+				let response = res.body;
+				verify.verifyAuthenticateResponse(response);
+				expect(namesOf(response.availableProfiles)).to.have.members([config.data.user2.character1.name]);
+				expect(response.selectedProfile).to.exist;
+				expect(response.selectedProfile.name).to.equal(config.data.user2.character1.name);
+				expect(response.user).to.exist;
+			})
+			.then(res => res.body)
+			.then(delay(config.rateLimits.login));
+	}
+
+	function authenticateUser3() {
+		return request.post("/authserver/authenticate")
+			.send({
+				username: config.data.user3.email,
+				password: config.data.user3.password,
+				requestUser: true,
+				agent: agent
+			})
+			.expect(200)
+			.expect(res => {
+				let response = res.body;
+				verify.verifyAuthenticateResponse(response);
+				expect(namesOf(response.availableProfiles)).to.have.members([config.data.user3.character1.name, config.data.user3.character2.name]);
+				expect(response.selectedProfile).to.not.exist;
+				expect(response.user).to.exist;
+			})
+			.then(res => res.body)
+			.then(delay(config.rateLimits.login));
+	}
+
+	describe("authenticate", function () {
+
+		this.slow(slowTime);
 		it("incorrect user",
 			() => request.post("/authserver/authenticate")
 				.send({
@@ -80,6 +143,7 @@ describe("yggdrasil basic api", function () {
 				.expect(403)
 				.expect(exception("ForbiddenOperationException")));
 
+		this.slow(slowTime + config.rateLimits.login);
 		it("incorrect password",
 			() => request.post("/authserver/authenticate")
 				.send({
@@ -91,6 +155,7 @@ describe("yggdrasil basic api", function () {
 				.expect(exception("ForbiddenOperationException"))
 				.then(delay(config.rateLimits.login)));
 
+		this.slow(slowTime + config.rateLimits.login);
 		it("rate limit",
 			() => request.post("/authserver/authenticate")
 				.send({
@@ -109,6 +174,7 @@ describe("yggdrasil basic api", function () {
 					.expect(exception("ForbiddenOperationException")))
 				.then(delay(config.rateLimits.login)));
 
+		this.slow(slowTime + config.rateLimits.login);
 		it("user1 with requestUser=false",
 			() => request.post("/authserver/authenticate")
 				.send({
@@ -125,6 +191,7 @@ describe("yggdrasil basic api", function () {
 				})
 				.then(delay(config.rateLimits.login)));
 
+		this.slow(slowTime + config.rateLimits.login);
 		it("user1 with clientToken",
 			() => request.post("/authserver/authenticate")
 				.send({
@@ -143,59 +210,220 @@ describe("yggdrasil basic api", function () {
 				})
 				.then(delay(config.rateLimits.login)));
 
-		it("user1",
-			() => request.post("/authserver/authenticate")
-				.send({
-					username: config.data.user1.email,
-					password: config.data.user1.password,
-					requestUser: true,
-					agent: agent
-				})
-				.expect(200)
-				.expect(res => {
-					let response = res.body;
-					verify.verifyAuthenticateResponse(response);
-					expect(response.availableProfiles).to.be.empty;
-					expect(response.selectedProfile).to.not.exist;
-					expect(response.user).to.exist;
-				})
-				.then(delay(config.rateLimits.login)));
+		this.slow(slowTime + config.rateLimits.login);
+		it("user1", () => authenticateUser1());
 
-		it("user2",
-			() => request.post("/authserver/authenticate")
+		this.slow(slowTime + config.rateLimits.login);
+		it("user2", () => authenticateUser2());
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("user3", () => authenticateUser3());
+	});
+
+	describe("refresh", function () {
+		function verifyUser1or3RefreshResponse(response, authResponse) {
+			verify.verifyRefreshResponse(response, authResponse);
+			expect(response.selectedProfile).to.not.exist;
+			expect(response.user).to.not.exist;
+		}
+
+		function findProfile(name, availableProfiles) {
+			let characterX;
+			for (let character of availableProfiles) {
+				if (character.name === name) {
+					characterX = character;
+					break;
+				}
+			}
+			expect(characterX).to.exist;
+			return characterX;
+		}
+
+		function selectProfile(name, availableProfiles, lastResponse) {
+			let characterX = findProfile(name, availableProfiles);
+			return request.post("/authserver/refresh")
 				.send({
-					username: config.data.user2.email,
-					password: config.data.user2.password,
-					requestUser: true,
-					agent: agent
+					accessToken: lastResponse.accessToken,
+					selectedProfile: characterX
 				})
 				.expect(200)
 				.expect(res => {
 					let response = res.body;
-					verify.verifyAuthenticateResponse(response);
-					expect(namesOf(response.availableProfiles)).to.have.members([config.data.user2.character1.name]);
+					verify.verifyRefreshResponse(response, lastResponse);
+					expect(response.user).to.not.exist;
 					expect(response.selectedProfile).to.exist;
-					expect(response.selectedProfile.name).to.equal(config.data.user2.character1.name);
-					expect(response.user).to.exist;
+					expect(response.selectedProfile.id).to.equal(characterX.id);
+					expect(response.selectedProfile.name).to.equal(name);
 				})
-				.then(delay(config.rateLimits.login)));
+				.then(res => res.body);
+		}
 
-		it("user3",
-			() => request.post("/authserver/authenticate")
+		this.slow(slowTime);
+		it("incorrect accessToken",
+			() => request.post("/authserver/refresh")
 				.send({
-					username: config.data.user3.email,
-					password: config.data.user3.password,
-					requestUser: true,
-					agent: agent
+					"accessToken": "fa0e97770dec465aa3c5db8d70162857"
 				})
-				.expect(200)
-				.expect(res => {
-					let response = res.body;
-					verify.verifyAuthenticateResponse(response);
-					expect(namesOf(response.availableProfiles)).to.have.members([config.data.user3.character1.name, config.data.user3.character2.name]);
-					expect(response.selectedProfile).to.not.exist;
-					expect(response.user).to.exist;
-				})
-				.then(delay(config.rateLimits.login)));
+				.expect(403)
+				.expect(exception("ForbiddenOperationException")));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("incorrect clientToken",
+			() => authenticateUser1()
+				.then(authResponse => request.post("/authserver/refresh")
+					.send({
+						accessToken: authResponse.accessToken,
+						clientToken: "fa0e97770dec465aa3c5db8d70162857"
+					})
+					.expect(403)
+					.expect(exception("ForbiddenOperationException"))));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("user1 with clientToken",
+			() => authenticateUser1()
+				.then(authResponse => request.post("/authserver/refresh")
+					.send({
+						accessToken: authResponse.accessToken,
+						clientToken: authResponse.clientToken
+					})
+					.expect(200)
+					.expect(res => verifyUser1or3RefreshResponse(res.body, authResponse))));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("user1 with requestUser=true",
+			() => authenticateUser1()
+				.then(authResponse => request.post("/authserver/refresh")
+					.send({
+						accessToken: authResponse.accessToken,
+						requestUser: true
+					})
+					.expect(200)
+					.expect(res => {
+						let response = res.body;
+						verify.verifyRefreshResponse(response, authResponse);
+						expect(response.selectedProfile).to.not.exist;
+						expect(response.user).to.exist;
+					})));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("old token should be un-refreshable",
+			() => authenticateUser1()
+				.then(authResponse => request.post("/authserver/refresh")
+					.send({
+						accessToken: authResponse.accessToken
+					})
+					.expect(200)
+					.expect(res => verifyUser1or3RefreshResponse(res.body, authResponse))
+					.then(() => request.post("/authserver/refresh")
+						.send({
+							accessToken: authResponse.accessToken
+						})
+						.expect(403)
+						.expect(exception("ForbiddenOperationException")))));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("continuous refresh",
+			() => authenticateUser1()
+				.then(authResponse => request.post("/authserver/refresh")
+					.send({
+						accessToken: authResponse.accessToken
+					})
+					.expect(200)
+					.expect(res => verifyUser1or3RefreshResponse(res.body, authResponse))
+					.then(res => res.body))
+				.then(lastResponse => request.post("/authserver/refresh")
+					.send({
+						accessToken: lastResponse.accessToken
+					})
+					.expect(200)
+					.expect(res => verifyUser1or3RefreshResponse(res.body, lastResponse))));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("user2",
+			() => authenticateUser2()
+				.then(authResponse => request.post("/authserver/refresh")
+					.send({
+						accessToken: authResponse.accessToken
+					})
+					.expect(200)
+					.expect(res => {
+						let response = res.body;
+						verify.verifyRefreshResponse(response, authResponse);
+						expect(response.user).not.exist;
+						expect(response.selectedProfile).to.exist;
+						expect(response.selectedProfile.id).to.equal(authResponse.selectedProfile.id);
+						expect(response.selectedProfile.name).to.equal(config.data.user2.character1.name);
+					})));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("user3",
+			() => authenticateUser3()
+				.then(authResponse => request.post("/authserver/refresh")
+					.send({
+						accessToken: authResponse.accessToken
+					})
+					.expect(200)
+					.expect(res => {
+						let response = res.body;
+						verify.verifyRefreshResponse(response, authResponse);
+						expect(response.user).not.exist;
+						expect(response.selectedProfile).to.not.exist;
+					})));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("select profile",
+			() => authenticateUser3()
+				.then(authResponse => selectProfile(config.data.user3.character2.name, authResponse.availableProfiles, authResponse)));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("select nonexistent profile (after which old token should be still usable)",
+			() => authenticateUser3()
+				.then(authResponse => request.post("/authserver/refresh")
+					.send({
+						accessToken: authResponse.accessToken,
+						selectedProfile: {
+							id: "992960dfc7a54afca041760004499434",
+							name: "characterNotExists"
+						}
+					})
+					.expect(400)
+					.expect(exception("IllegalArgumentException"))
+					.then(() => request.post("/authserver/refresh")
+						.send({
+							accessToken: authResponse.accessToken
+						})
+						.expect(200)
+						.expect(res => verifyUser1or3RefreshResponse(res.body, authResponse)))));
+
+		this.slow(slowTime + 2 * config.rateLimits.login);
+		it("select another user's profile (after which old token should be still usable)",
+			() => authenticateUser2()
+				.then(res => res.selectedProfile)
+				.then(othersProfile => authenticateUser3()
+					.then(authResponse => request.post("/authserver/refresh")
+						.send({
+							accessToken: authResponse.accessToken,
+							selectedProfile: othersProfile
+						})
+						.expect(403)
+						.expect(exception("ForbiddenOperationException"))
+						.then(() => request.post("/authserver/refresh")
+							.send({
+								accessToken: authResponse.accessToken
+							})
+							.expect(200)
+							.expect(res => verifyUser1or3RefreshResponse(res.body, authResponse))))));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("select profile with an already-bound token",
+			() => authenticateUser3()
+				.then(authResponse => selectProfile(config.data.user3.character2.name, authResponse.availableProfiles, authResponse)
+					.then(lastResponse => request.post("/authserver/refresh")
+						.send({
+							"accessToken": lastResponse.accessToken,
+							"selectedProfile": findProfile(config.data.user3.character1.name, authResponse.availableProfiles)
+						})
+						.expect(400)
+						.expect(exception("IllegalArgumentException")))));
 	});
 });

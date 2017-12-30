@@ -7,9 +7,17 @@ module.exports = {
 	},
 
 	data: {
+		// 不能存在的用户：
+		// notExists@to2mbn.org
+
+		// 不能存在的角色：
+		// 992960dfc7a54afca041760004499434 - characterNotExists
+
 		user1: {
 			// 此用户不拥有角色
 			email: "test1@to2mbn.org",
+			// 不能使用的密码：
+			// incorrectPassword-_-
 			password: "111111"
 		},
 

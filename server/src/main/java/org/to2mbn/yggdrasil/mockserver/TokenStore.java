@@ -4,6 +4,8 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.randomUnsignedUUID;
+import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.m_access_denied;
+import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.newForbiddenOperationException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -82,13 +84,20 @@ public class TokenStore {
 		return ofNullable(token);
 	}
 
-	public Token acquireToken(YggdrasilUser user, @Nullable String clientToken) {
+	public Token acquireToken(YggdrasilUser user, @Nullable String clientToken, @Nullable YggdrasilCharacter selectedCharacter) {
 		Token token = new Token();
 		token.accessToken = randomUnsignedUUID();
-		if (user.getCharacters().size() == 1) {
-			token.boundCharacter = of(user.getCharacters().get(0));
+		if (selectedCharacter == null) {
+			if (user.getCharacters().size() == 1) {
+				token.boundCharacter = of(user.getCharacters().get(0));
+			} else {
+				token.boundCharacter = empty();
+			}
 		} else {
-			token.boundCharacter = empty();
+			if (!user.getCharacters().contains(selectedCharacter)) {
+				throw newForbiddenOperationException(m_access_denied);
+			}
+			token.boundCharacter = of(selectedCharacter);
 		}
 		token.clientToken = clientToken == null ? randomUnsignedUUID() : clientToken;
 		token.createdAt = System.currentTimeMillis();

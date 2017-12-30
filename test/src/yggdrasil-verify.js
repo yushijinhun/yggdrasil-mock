@@ -92,6 +92,18 @@ class YggdrasilVerifier {
 			this.verifyUser(response.user);
 		}
 	}
+
+	verifyRefreshResponse(response, lastResponse) {
+		expect(response).to.be.an("object");
+		expect(response.accessToken).to.be.a("string").that.not.equals(lastResponse.accessToken);
+		expect(response.clientToken).to.be.a("string").that.equals(lastResponse.clientToken);
+		if (exists(response.selectedProfile)) {
+			this.verifySimpleCharacter(response.selectedProfile);
+		}
+		if (exists(response.user)) {
+			this.verifyUser(response.user);
+		}
+	}
 }
 
 module.exports = YggdrasilVerifier;
