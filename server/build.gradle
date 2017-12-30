@@ -26,3 +26,7 @@ dependencies {
 	compile 'org.springframework.boot:spring-boot-starter-webflux'
 	compile 'commons-io:commons-io:2.6'
 }
+
+bootJar {
+	launchScript()
+}
