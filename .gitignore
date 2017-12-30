@@ -27,6 +27,7 @@ hs_err_pid*
 build/
 gradle/
 gradlew
+gradlew.bat
 out/
 output/
 run/

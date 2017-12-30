@@ -1,7 +1,8 @@
 #!/bin/bash
 set -xem
 cd server
-gradle clean bootJar
+gradle wrapper --gradle-version 4.4.1
+./gradlew clean bootJar
 cd ../test
 npm install .
 npm test
