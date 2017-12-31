@@ -642,4 +642,8 @@ describe("yggdrasil basic api", function () {
 					.expect(exception("ForbiddenOperationException")))
 				.then(delay(config.rateLimits.login)));
 	});
+
+	describe("token lifecycle", function () {
+		// TODO
+	});
 });

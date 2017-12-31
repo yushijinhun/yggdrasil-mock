@@ -1,6 +1,17 @@
 #!/bin/bash
 
 TRAVIS_GRADLE_VERSION="4.4.1"
+APPLICATION_CONFIG='
+{
+	"yggdrasil": {
+		"token": {
+			"timeToPartiallyExpired": "2s",
+			"timeToFullyExpired": "4s"
+		}
+	}
+}
+'
+
 if tput colors>/dev/null 2>&1;then
 	LOG_PREFIX="\e[93m\e[1m[build]\e[0m "
 else
@@ -31,7 +42,7 @@ npm install .
 log "npm test"
 npm test
 log "Starting yggdrasil server"
-../server/build/libs/yggdrasil-mock-server-*.jar &
+../server/build/libs/yggdrasil-mock-server-*.jar "--spring.application.json=$APPLICATION_CONFIG" &
 onexit(){
 	set +e
 	if jobs -rp|grep -P "\d+">/dev/null;then
