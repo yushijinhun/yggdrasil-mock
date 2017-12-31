@@ -129,6 +129,18 @@ public class Router {
 					authenticated(req.accessToken, req.clientToken, AvailableLevel.COMPLETE);
 					return noContent().build();
 				})
+				.switchIfEmpty(Mono.defer(() -> { throw newIllegalArgumentException(m_no_credentials); })))
+
+		.andRoute(POST("/authserver/invalidate"),
+			request -> request.bodyToMono(InvalidateRequest.class)
+				.flatMap(req -> {
+					if (req.accessToken == null)
+						throw newIllegalArgumentException(m_no_credentials);
+
+					tokenStore.findToken(req.accessToken).ifPresent(Token::revoke);
+
+					return noContent().build();
+				})
 				.switchIfEmpty(Mono.defer(() -> { throw newIllegalArgumentException(m_no_credentials); })));
 		// @formatter:on
 	}
@@ -193,6 +205,12 @@ public class Router {
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class ValidateRequest {
+		public String accessToken;
+		public String clientToken;
+	}
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	public static class InvalidateRequest {
 		public String accessToken;
 		public String clientToken;
 	}

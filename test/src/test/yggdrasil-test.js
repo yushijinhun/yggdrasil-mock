@@ -262,7 +262,7 @@ describe("yggdrasil basic api", function () {
 		it("incorrect accessToken",
 			() => request.post("/authserver/refresh")
 				.send({
-					"accessToken": "fa0e97770dec465aa3c5db8d70162857"
+					accessToken: "fa0e97770dec465aa3c5db8d70162857"
 				})
 				.expect(403)
 				.expect(exception("ForbiddenOperationException")));
@@ -420,8 +420,8 @@ describe("yggdrasil basic api", function () {
 				.then(authResponse => selectProfile(config.data.user3.character2.name, authResponse.availableProfiles, authResponse)
 					.then(lastResponse => request.post("/authserver/refresh")
 						.send({
-							"accessToken": lastResponse.accessToken,
-							"selectedProfile": findProfile(config.data.user3.character1.name, authResponse.availableProfiles)
+							accessToken: lastResponse.accessToken,
+							selectedProfile: findProfile(config.data.user3.character1.name, authResponse.availableProfiles)
 						})
 						.expect(400)
 						.expect(exception("IllegalArgumentException")))));
@@ -433,7 +433,7 @@ describe("yggdrasil basic api", function () {
 		it("incorrect accessToken",
 			() => request.post("/authserver/validate")
 				.send({
-					"accessToken": "fa0e97770dec465aa3c5db8d70162857"
+					accessToken: "fa0e97770dec465aa3c5db8d70162857"
 				})
 				.expect(403)
 				.expect(exception("ForbiddenOperationException")));
@@ -465,6 +465,91 @@ describe("yggdrasil basic api", function () {
 				.then(authResponse => request.post("/authserver/validate")
 					.send({
 						accessToken: authResponse.accessToken
+					})
+					.expect(204)));
+
+	});
+
+	describe("invalidate", function () {
+		this.slow(slowTime);
+		it("incorrect accessToken",
+			() => request.post("/authserver/invalidate")
+				.send({
+					accessToken: "fa0e97770dec465aa3c5db8d70162857"
+				})
+				.expect(204));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("incorrect clientToken",
+			() => authenticateUser1()
+				.then(authResponse => request.post("/authserver/invalidate")
+					.send({
+						accessToken: authResponse.accessToken,
+						clientToken: "fa0e97770dec465aa3c5db8d70162857"
+					})
+					.expect(204)
+					.then(() => authResponse))
+				.then(lastResponse => request.post("/authserver/validate")
+					.send({
+						accessToken: lastResponse.accessToken
+					})
+					.expect(403)
+					.expect(exception("ForbiddenOperationException"))));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("user1 with clientToken",
+			() => authenticateUser1()
+				.then(authResponse => request.post("/authserver/invalidate")
+					.send({
+						accessToken: authResponse.accessToken,
+						clientToken: authResponse.clientToken
+					})
+					.expect(204)
+					.then(() => authResponse))
+				.then(lastResponse => request.post("/authserver/validate")
+					.send({
+						accessToken: lastResponse.accessToken
+					})
+					.expect(403)
+					.expect(exception("ForbiddenOperationException"))));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("user1",
+			() => authenticateUser1()
+				.then(authResponse => request.post("/authserver/invalidate")
+					.send({
+						accessToken: authResponse.accessToken
+					})
+					.expect(204)
+					.then(() => authResponse))
+				.then(lastResponse => request.post("/authserver/validate")
+					.send({
+						accessToken: lastResponse.accessToken
+					})
+					.expect(403)
+					.expect(exception("ForbiddenOperationException"))));
+
+		this.slow(slowTime + 2 * config.rateLimits.login);
+		it("should not affect other tokens",
+			() => authenticateUser1()
+				.then(authResponse1 => authenticateUser1()
+					.then(authResponse2 => [authResponse1, authResponse2]))
+				.then(authResponses => request.post("/authserver/invalidate")
+					.send({
+						accessToken: authResponses[0].accessToken
+					})
+					.expect(204)
+					.then(() => authResponses))
+				.then(authResponses => request.post("/authserver/validate")
+					.send({
+						accessToken: authResponses[0].accessToken
+					})
+					.expect(403)
+					.expect(exception("ForbiddenOperationException"))
+					.then(() => authResponses))
+				.then(authResponses => request.post("/authserver/validate")
+					.send({
+						accessToken: authResponses[1].accessToken
 					})
 					.expect(204)));
 
