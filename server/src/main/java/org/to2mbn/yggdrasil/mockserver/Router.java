@@ -5,6 +5,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
+import static org.springframework.web.reactive.function.server.ServerResponse.noContent;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.randomUnsignedUUID;
 import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.toUUID;
@@ -66,15 +67,15 @@ public class Router {
 					if (req.clientToken == null)
 						req.clientToken = randomUnsignedUUID();
 
-					Token token = tokenStore.acquireToken(user, req.clientToken,null);
+					Token token = tokenStore.acquireToken(user, req.clientToken, null);
 
 					Map<String, Object> response = new LinkedHashMap<>();
 					response.put("accessToken", token.getAccessToken());
 					response.put("clientToken", token.getClientToken());
 					response.put("availableProfiles",
-					user.getCharacters().stream()
-						.map(YggdrasilCharacter::toSimpleResponse)
-						.collect(toList()));
+							user.getCharacters().stream()
+								.map(YggdrasilCharacter::toSimpleResponse)
+								.collect(toList()));
 					token.getBoundCharacter().ifPresent(
 						it -> response.put("selectedProfile", it.toSimpleResponse()));
 
@@ -90,17 +91,17 @@ public class Router {
 		.andRoute(POST("/authserver/refresh"),
 			request -> request.bodyToMono(RefreshRequest.class)
 				.flatMap(req -> {
-					Token oldToken = authenticated(req.accessToken, req.clientToken);
+					Token oldToken = authenticated(req.accessToken, req.clientToken, AvailableLevel.PARTIAL);
 
 					YggdrasilCharacter characterToSelect = null;
 					if (req.selectedProfile != null) {
 						if (oldToken.getBoundCharacter().isPresent())
 							throw newIllegalArgumentException(m_token_already_assigned);
 
-						characterToSelect = database.findCharacterByUUID(toUUID(req.getSelectedProfile().getId()))
+						characterToSelect = database.findCharacterByUUID(toUUID(req.selectedProfile.id))
 							.orElseThrow(() -> newIllegalArgumentException(m_profile_not_found));
 
-						if (!characterToSelect.getName().equals(req.getSelectedProfile().getName()))
+						if (!characterToSelect.getName().equals(req.selectedProfile.name))
 							throw newIllegalArgumentException(m_profile_not_found);
 					}
 
@@ -120,6 +121,14 @@ public class Router {
 						.contentType(APPLICATION_JSON_UTF8)
 						.syncBody(response);
 				})
+				.switchIfEmpty(Mono.defer(() -> { throw newIllegalArgumentException(m_no_credentials); })))
+
+		.andRoute(POST("/authserver/validate"),
+			request -> request.bodyToMono(ValidateRequest.class)
+				.flatMap(req -> {
+					authenticated(req.accessToken, req.clientToken, AvailableLevel.COMPLETE);
+					return noContent().build();
+				})
 				.switchIfEmpty(Mono.defer(() -> { throw newIllegalArgumentException(m_no_credentials); })));
 		// @formatter:on
 	}
@@ -130,7 +139,11 @@ public class Router {
 		}
 	}
 
-	private Token authenticated(@Nullable String accessToken, @Nullable String clientToken) {
+	private static enum AvailableLevel {
+		COMPLETE, PARTIAL;
+	}
+
+	private Token authenticated(@Nullable String accessToken, @Nullable String clientToken, AvailableLevel availableLevel) {
 		if (accessToken == null)
 			throw newIllegalArgumentException(m_no_credentials);
 
@@ -140,111 +153,48 @@ public class Router {
 		if (clientToken != null && !clientToken.equals(token.getClientToken()))
 			throw newForbiddenOperationException(m_invalid_credentials);
 
-		return token;
+		switch (availableLevel) {
+			case COMPLETE:
+				if (token.isValid()) {
+					return token;
+				}
+				break;
+			case PARTIAL:
+				if (token.isRefreshable()) {
+					return token;
+				}
+				break;
+		}
+		throw newForbiddenOperationException(m_invalid_credentials);
 	}
 
 	// ---- Requests ----
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class LoginRequest {
-		private String username;
-		private String password;
-		private String clientToken;
-		private boolean requestUser = false;
-
-		public String getUsername() {
-			return username;
-		}
-
-		public void setUsername(String username) {
-			this.username = username;
-		}
-
-		public String getPassword() {
-			return password;
-		}
-
-		public void setPassword(String password) {
-			this.password = password;
-		}
-
-		public String getClientToken() {
-			return clientToken;
-		}
-
-		public void setClientToken(String clientToken) {
-			this.clientToken = clientToken;
-		}
-
-		public boolean isRequestUser() {
-			return requestUser;
-		}
-
-		public void setRequestUser(boolean requestUser) {
-			this.requestUser = requestUser;
-		}
+		public String username;
+		public String password;
+		public String clientToken;
+		public boolean requestUser = false;
 	}
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class RefreshRequest {
-		private String accessToken;
-		private String clientToken;
-		private boolean requestUser = false;
-		private ProfileBody selectedProfile;
-
-		public String getAccessToken() {
-			return accessToken;
-		}
-
-		public void setAccessToken(String accessToken) {
-			this.accessToken = accessToken;
-		}
-
-		public String getClientToken() {
-			return clientToken;
-		}
-
-		public void setClientToken(String clientToken) {
-			this.clientToken = clientToken;
-		}
-
-		public boolean isRequestUser() {
-			return requestUser;
-		}
-
-		public void setRequestUser(boolean requestUser) {
-			this.requestUser = requestUser;
-		}
-
-		public ProfileBody getSelectedProfile() {
-			return selectedProfile;
-		}
-
-		public void setSelectedProfile(ProfileBody selectedProfile) {
-			this.selectedProfile = selectedProfile;
-		}
+		public String accessToken;
+		public String clientToken;
+		public boolean requestUser = false;
+		public ProfileBody selectedProfile;
 	}
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class ProfileBody {
-		private String id;
-		private String name;
+		public String id;
+		public String name;
+	}
 
-		public String getId() {
-			return id;
-		}
-
-		public void setId(String id) {
-			this.id = id;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
-		}
-
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	public static class ValidateRequest {
+		public String accessToken;
+		public String clientToken;
 	}
 	// --------
 

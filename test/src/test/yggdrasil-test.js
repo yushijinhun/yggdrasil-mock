@@ -426,4 +426,47 @@ describe("yggdrasil basic api", function () {
 						.expect(400)
 						.expect(exception("IllegalArgumentException")))));
 	});
+
+	describe("validate", function () {
+
+		this.slow(slowTime);
+		it("incorrect accessToken",
+			() => request.post("/authserver/validate")
+				.send({
+					"accessToken": "fa0e97770dec465aa3c5db8d70162857"
+				})
+				.expect(403)
+				.expect(exception("ForbiddenOperationException")));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("incorrect clientToken",
+			() => authenticateUser1()
+				.then(authResponse => request.post("/authserver/validate")
+					.send({
+						accessToken: authResponse.accessToken,
+						clientToken: "fa0e97770dec465aa3c5db8d70162857"
+					})
+					.expect(403)
+					.expect(exception("ForbiddenOperationException"))));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("user1 with clientToken",
+			() => authenticateUser1()
+				.then(authResponse => request.post("/authserver/validate")
+					.send({
+						accessToken: authResponse.accessToken,
+						clientToken: authResponse.clientToken
+					})
+					.expect(204)));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("user1",
+			() => authenticateUser1()
+				.then(authResponse => request.post("/authserver/validate")
+					.send({
+						accessToken: authResponse.accessToken
+					})
+					.expect(204)));
+
+	});
 });
