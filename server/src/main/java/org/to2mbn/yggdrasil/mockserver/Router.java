@@ -56,13 +56,7 @@ public class Router {
 		.andRoute(POST("/authserver/authenticate"),
 			request -> request.bodyToMono(LoginRequest.class)
 				.flatMap(req -> {
-					if (req.username == null || req.password == null)
-						throw newIllegalArgumentException(m_no_credentials);
-
-					YggdrasilUser user = database.findUserByEmail(req.username).orElseThrow(() -> newForbiddenOperationException(m_invalid_credentials));
-					rateLimit(user);
-					if (!req.password.equals(user.getPassword()))
-						throw newForbiddenOperationException(m_invalid_credentials);
+					YggdrasilUser user = passwordAuthenticated(req.username,req.password);
 
 					if (req.clientToken == null)
 						req.clientToken = randomUnsignedUUID();
@@ -141,6 +135,15 @@ public class Router {
 
 					return noContent().build();
 				})
+				.switchIfEmpty(Mono.defer(() -> { throw newIllegalArgumentException(m_no_credentials); })))
+
+		.andRoute(POST("/authserver/signout"),
+			request -> request.bodyToMono(SignoutRequest.class)
+				.flatMap(req -> {
+					YggdrasilUser user = passwordAuthenticated(req.username, req.password);
+					tokenStore.revokeAll(user);
+					return noContent().build();
+				})
 				.switchIfEmpty(Mono.defer(() -> { throw newIllegalArgumentException(m_no_credentials); })));
 		// @formatter:on
 	}
@@ -153,6 +156,17 @@ public class Router {
 
 	private static enum AvailableLevel {
 		COMPLETE, PARTIAL;
+	}
+
+	private YggdrasilUser passwordAuthenticated(@Nullable String username, @Nullable String password) {
+		if (username == null || password == null)
+			throw newIllegalArgumentException(m_no_credentials);
+
+		YggdrasilUser user = database.findUserByEmail(username).orElseThrow(() -> newForbiddenOperationException(m_invalid_credentials));
+		rateLimit(user);
+		if (!password.equals(user.getPassword()))
+			throw newForbiddenOperationException(m_invalid_credentials);
+		return user;
 	}
 
 	private Token authenticated(@Nullable String accessToken, @Nullable String clientToken, AvailableLevel availableLevel) {
@@ -213,6 +227,12 @@ public class Router {
 	public static class InvalidateRequest {
 		public String accessToken;
 		public String clientToken;
+	}
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	public static class SignoutRequest {
+		public String username;
+		public String password;
 	}
 	// --------
 

@@ -130,6 +130,42 @@ describe("yggdrasil basic api", function () {
 			.then(delay(config.rateLimits.login));
 	}
 
+	function signoutUser1() {
+		return request.post("/authserver/signout")
+			.send({
+				username: config.data.user1.email,
+				password: config.data.user1.password
+			})
+			.expect(204)
+			.then(delay(config.rateLimits.login));
+	}
+
+	function tokenShouldBeInvalid(accessToken) {
+		return request.post("/authserver/validate")
+			.send({
+				accessToken: accessToken
+			})
+			.expect(403)
+			.expect(exception("ForbiddenOperationException"));
+	}
+
+	function tokenShouldBeValid(accessToken) {
+		return request.post("/authserver/validate")
+			.send({
+				accessToken: accessToken
+			})
+			.expect(204);
+	}
+
+	function tokenShouldBeUnrefreshable(accessToken) {
+		return request.post("/authserver/refresh")
+			.send({
+				accessToken: accessToken
+			})
+			.expect(403)
+			.expect(exception("ForbiddenOperationException"));
+	}
+
 	describe("authenticate", function () {
 
 		this.slow(slowTime);
@@ -489,12 +525,7 @@ describe("yggdrasil basic api", function () {
 					})
 					.expect(204)
 					.then(() => authResponse))
-				.then(lastResponse => request.post("/authserver/validate")
-					.send({
-						accessToken: lastResponse.accessToken
-					})
-					.expect(403)
-					.expect(exception("ForbiddenOperationException"))));
+				.then(lastResponse => tokenShouldBeInvalid(lastResponse.accessToken)));
 
 		this.slow(slowTime + config.rateLimits.login);
 		it("user1 with clientToken",
@@ -506,12 +537,7 @@ describe("yggdrasil basic api", function () {
 					})
 					.expect(204)
 					.then(() => authResponse))
-				.then(lastResponse => request.post("/authserver/validate")
-					.send({
-						accessToken: lastResponse.accessToken
-					})
-					.expect(403)
-					.expect(exception("ForbiddenOperationException"))));
+				.then(lastResponse => tokenShouldBeInvalid(lastResponse.accessToken)));
 
 		this.slow(slowTime + config.rateLimits.login);
 		it("user1",
@@ -522,12 +548,18 @@ describe("yggdrasil basic api", function () {
 					})
 					.expect(204)
 					.then(() => authResponse))
-				.then(lastResponse => request.post("/authserver/validate")
+				.then(lastResponse => tokenShouldBeInvalid(lastResponse.accessToken)));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("user1 (after which token should be un-refreshable)",
+			() => authenticateUser1()
+				.then(authResponse => request.post("/authserver/invalidate")
 					.send({
-						accessToken: lastResponse.accessToken
+						accessToken: authResponse.accessToken
 					})
-					.expect(403)
-					.expect(exception("ForbiddenOperationException"))));
+					.expect(204)
+					.then(() => authResponse))
+				.then(lastResponse => tokenShouldBeUnrefreshable(lastResponse.accessToken)));
 
 		this.slow(slowTime + 2 * config.rateLimits.login);
 		it("should not affect other tokens",
@@ -540,18 +572,75 @@ describe("yggdrasil basic api", function () {
 					})
 					.expect(204)
 					.then(() => authResponses))
-				.then(authResponses => request.post("/authserver/validate")
+				.then(authResponses => tokenShouldBeInvalid(authResponses[0].accessToken)
+					.then(() => authResponses))
+				.then(authResponses => tokenShouldBeValid(authResponses[1].accessToken)));
+
+	});
+
+	describe("signout", function () {
+
+		this.slow(slowTime);
+		it("incorrect user",
+			() => request.post("/authserver/signout")
+				.send({
+					username: "notExists@to2mbn.org",
+					password: "123456"
+				})
+				.expect(403)
+				.expect(exception("ForbiddenOperationException")));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("incorrect password",
+			() => request.post("/authserver/signout")
+				.send({
+					username: config.data.user1.email,
+					password: "incorrectPassword-_-"
+				})
+				.expect(403)
+				.expect(exception("ForbiddenOperationException"))
+				.then(delay(config.rateLimits.login)));
+
+		this.slow(slowTime + 2 * config.rateLimits.login);
+		it("user1",
+			() => authenticateUser1()
+				.then(authResponse => signoutUser1()
+					.then(() => authResponse))
+				.then(lastResponse => tokenShouldBeInvalid(lastResponse.accessToken)));
+
+		this.slow(slowTime + 2 * config.rateLimits.login);
+		it("user1 (after which token should be un-refreshable)",
+			() => authenticateUser1()
+				.then(authResponse => signoutUser1()
+					.then(() => authResponse))
+				.then(lastResponse => tokenShouldBeUnrefreshable(lastResponse.accessToken)));
+
+		this.slow(slowTime + 3 * config.rateLimits.login);
+		it("should revoke all tokens",
+			() => authenticateUser1()
+				.then(authResponse1 => authenticateUser1()
+					.then(authResponse2 => [authResponse1, authResponse2]))
+				.then(authResponses => signoutUser1()
+					.then(() => authResponses))
+				.then(authResponses => tokenShouldBeInvalid(authResponses[0].accessToken)
+					.then(() => authResponses))
+				.then(authResponses => tokenShouldBeInvalid(authResponses[1].accessToken)));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it("rate limit",
+			() => request.post("/authserver/signout")
+				.send({
+					username: config.data.user1.email,
+					password: config.data.user1.password
+				})
+				.expect(204)
+				.then(() => request.post("/authserver/signout")
 					.send({
-						accessToken: authResponses[0].accessToken
+						username: config.data.user1.email,
+						password: config.data.user1.password
 					})
 					.expect(403)
-					.expect(exception("ForbiddenOperationException"))
-					.then(() => authResponses))
-				.then(authResponses => request.post("/authserver/validate")
-					.send({
-						accessToken: authResponses[1].accessToken
-					})
-					.expect(204)));
-
+					.expect(exception("ForbiddenOperationException")))
+				.then(delay(config.rateLimits.login)));
 	});
 });
