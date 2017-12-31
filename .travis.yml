@@ -1,4 +1,4 @@
 sudo: required
 language: generic
 script:
-- ./build.sh --travis
+- ./build.sh --travis-ci
