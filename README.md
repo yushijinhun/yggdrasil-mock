@@ -1,5 +1,8 @@
 # yggdrasil-mock
-[![Build Status](https://travis-ci.org/to2mbn/yggdrasil-mock.svg?branch=master)](https://travis-ci.org/to2mbn/yggdrasil-mock) [![license](https://img.shields.io/github/license/to2mbn/yggdrasil-mock.svg)](https://github.com/to2mbn/yggdrasil-mock/blob/master/LICENSE)
+[![Build status](https://img.shields.io/travis/to2mbn/yggdrasil-mock.svg?style=flat-square)](https://travis-ci.org/to2mbn/yggdrasil-mock)
+[![license](https://img.shields.io/github/license/to2mbn/yggdrasil-mock.svg?style=flat-square)](https://github.com/to2mbn/yggdrasil-mock/blob/master/LICENSE)
+![languages](https://img.shields.io/badge/languages-javascript,_java-yellow.svg?style=flat-square)
+![require java 9+](https://img.shields.io/badge/require_java-9+-orange.svg?style=flat-square)
 
 Yggdrasil API测试样例，和一个简易的Yggdrasil服务端。
 
