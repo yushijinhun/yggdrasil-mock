@@ -56,7 +56,8 @@ describe("yggdrasil extension api", function () {
 
 	it("should have valid skin domains", () =>
 		response.skinDomains.every(domain =>
-			expect(domain).to.be.a("string")));
+			expect(domain).to.be.a("string").that.satisfies(it =>
+				!it.includes(" ") && it !== "", "domain cannot be empty or contain whitespace")));
 });
 
 describe("yggdrasil basic api", function () {
