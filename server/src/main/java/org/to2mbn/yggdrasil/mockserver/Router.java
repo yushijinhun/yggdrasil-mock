@@ -10,6 +10,7 @@ import static org.springframework.web.reactive.function.server.ServerResponse.ok
 import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.randomUnsignedUUID;
 import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.toUUID;
 import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.m_invalid_credentials;
+import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.m_invalid_token;
 import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.m_no_credentials;
 import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.m_profile_not_found;
 import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.m_token_already_assigned;
@@ -174,10 +175,10 @@ public class Router {
 			throw newIllegalArgumentException(m_no_credentials);
 
 		Token token = tokenStore.findToken(accessToken)
-				.orElseThrow(() -> newForbiddenOperationException(m_invalid_credentials));
+				.orElseThrow(() -> newForbiddenOperationException(m_invalid_token));
 
 		if (clientToken != null && !clientToken.equals(token.getClientToken()))
-			throw newForbiddenOperationException(m_invalid_credentials);
+			throw newForbiddenOperationException(m_invalid_token);
 
 		switch (availableLevel) {
 			case COMPLETE:
@@ -191,7 +192,7 @@ public class Router {
 				}
 				break;
 		}
-		throw newForbiddenOperationException(m_invalid_credentials);
+		throw newForbiddenOperationException(m_invalid_token);
 	}
 
 	// ---- Requests ----
