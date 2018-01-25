@@ -3,17 +3,22 @@ package org.to2mbn.yggdrasil.mockserver;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 import static java.util.Map.entry;
 import static java.util.Map.ofEntries;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static org.to2mbn.yggdrasil.mockserver.PropertiesUtils.base64Encoded;
 import static org.to2mbn.yggdrasil.mockserver.PropertiesUtils.properties;
 import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.unsign;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import javax.annotation.PostConstruct;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -23,11 +28,38 @@ import org.springframework.stereotype.Component;
 public class YggdrasilDatabase {
 
 	public static enum ModelType {
-		STEVE, ALEX;
+		STEVE("default"),
+		ALEX("slim");
+
+		private String modelName;
+
+		ModelType(String modelName) {
+			this.modelName = modelName;
+		}
+
+		public String getModelName() {
+			return modelName;
+		}
 	}
 
 	public static enum TextureType {
-		SKIN, CAPE, ELYTRA;
+		SKIN(character -> of(singletonMap("model", character.getModel().getModelName()))),
+		CAPE,
+		ELYTRA;
+
+		private Function<YggdrasilCharacter, Optional<Map<?, ?>>> metadataFunc;
+
+		TextureType() {
+			this(dummy -> empty());
+		}
+
+		TextureType(Function<YggdrasilCharacter, Optional<Map<?, ?>>> metadataFunc) {
+			this.metadataFunc = metadataFunc;
+		}
+
+		public Optional<Map<?, ?>> getMetadata(YggdrasilCharacter character) {
+			return metadataFunc.apply(character);
+		}
 	}
 
 	public static class YggdrasilCharacter {
@@ -88,6 +120,19 @@ public class YggdrasilDatabase {
 		}
 
 		public Map<String, Object> toCompleteResponse(boolean signed) {
+			Map<TextureType, Object> texturesResponse = new LinkedHashMap<>();
+			textures.forEach((type, url) -> {
+				// @formatter:off
+				texturesResponse.put(type, type.getMetadata(this)
+					.map(metadata -> ofEntries(
+						entry("url", url),
+						entry("metadata", metadata)
+					))
+					.orElseGet(() -> singletonMap("url", url))
+				);
+				// @formatter:on
+			});
+
 			return
 			// @formatter:off
 			ofEntries(
@@ -98,7 +143,7 @@ public class YggdrasilDatabase {
 						entry("timestamp", System.currentTimeMillis()),
 						entry("profileId", unsign(uuid)),
 						entry("profileName", name),
-						entry("textures", textures)
+						entry("textures", texturesResponse)
 					))
 				))
 			);
