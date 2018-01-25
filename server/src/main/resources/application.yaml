@@ -23,8 +23,10 @@ yggdrasil:
         textures:
           CAPE: https:///
   token:
-    time-to-partially-expired: 10m
     time-to-fully-expired: 20m
+    enable-time-to-partially-expired: true
+    time-to-partially-expired: 10m
+    only-last-session-available: false
   core:
     skinDomains:
     - .to2mbn.org

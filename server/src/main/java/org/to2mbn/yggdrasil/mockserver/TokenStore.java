@@ -31,11 +31,23 @@ public class TokenStore {
 		private Token() {}
 
 		public boolean isValid() {
-			return !revoked && System.currentTimeMillis() < createdAt + timeToPartiallyExpired.toMillis();
+			if (isFullyExpired())
+				return false;
+			if (enableTimeToPartiallyExpired && System.currentTimeMillis() > createdAt + timeToPartiallyExpired.toMillis())
+				return false;
+			if (onlyLastSessionAvailable && this != lastAcquiredToken.get(user))
+				return false;
+			return true;
 		}
 
 		public boolean isRefreshable() {
-			return !revoked && System.currentTimeMillis() < createdAt + timeToFullyExpired.toMillis();
+			if (isFullyExpired())
+				return false;
+			return true;
+		}
+
+		private boolean isFullyExpired() {
+			return revoked || System.currentTimeMillis() > createdAt + timeToFullyExpired.toMillis();
 		}
 
 		public String getClientToken() {
@@ -65,20 +77,30 @@ public class TokenStore {
 		public void revoke() {
 			if (!revoked) {
 				revoked = true;
-				accessToken2token.remove(accessToken);
+				removeToken(this);
 			}
 		}
 	}
 
-	private Duration timeToPartiallyExpired;
 	private Duration timeToFullyExpired;
 
+	private boolean enableTimeToPartiallyExpired;
+	private Duration timeToPartiallyExpired;
+
+	private boolean onlyLastSessionAvailable;
+
 	private Map<String, Token> accessToken2token = new ConcurrentHashMap<>();
+	private Map<YggdrasilUser, Token> lastAcquiredToken = new ConcurrentHashMap<>();
+
+	private void removeToken(Token token) {
+		accessToken2token.remove(token.accessToken);
+		lastAcquiredToken.remove(token.user, token);
+	}
 
 	public Optional<Token> findToken(String accessToken) {
 		Token token = accessToken2token.get(accessToken);
 		if (token != null && !token.isRefreshable() && !token.isValid()) {
-			accessToken2token.remove(accessToken);
+			removeToken(token);
 			return empty();
 		}
 		return ofNullable(token);
@@ -104,6 +126,7 @@ public class TokenStore {
 		token.revoked = false;
 		token.user = user;
 		accessToken2token.put(token.accessToken, token);
+		lastAcquiredToken.put(user, token);
 		return token;
 	}
 
@@ -127,5 +150,21 @@ public class TokenStore {
 
 	public void setTimeToFullyExpired(Duration timeToFullyExpired) {
 		this.timeToFullyExpired = timeToFullyExpired;
+	}
+
+	public boolean isEnableTimeToPartiallyExpired() {
+		return enableTimeToPartiallyExpired;
+	}
+
+	public void setEnableTimeToPartiallyExpired(boolean enableTimeToPartiallyExpired) {
+		this.enableTimeToPartiallyExpired = enableTimeToPartiallyExpired;
+	}
+
+	public boolean isOnlyLastSessionAvailable() {
+		return onlyLastSessionAvailable;
+	}
+
+	public void setOnlyLastSessionAvailable(boolean onlyLastSessionAvailable) {
+		this.onlyLastSessionAvailable = onlyLastSessionAvailable;
 	}
 }
