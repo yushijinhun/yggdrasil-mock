@@ -9,9 +9,9 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 import java.util.Map;
 import org.springframework.boot.autoconfigure.web.ErrorProperties;
 import org.springframework.boot.autoconfigure.web.ResourceProperties;
-import org.springframework.boot.autoconfigure.web.reactive.error.DefaultErrorAttributes;
 import org.springframework.boot.autoconfigure.web.reactive.error.DefaultErrorWebExceptionHandler;
-import org.springframework.boot.autoconfigure.web.reactive.error.ErrorAttributes;
+import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
+import org.springframework.boot.web.reactive.error.ErrorAttributes;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
