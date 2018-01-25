@@ -3,7 +3,7 @@ module.exports = {
 
 	rateLimits: {
 		// 单位：ms
-		login: 1000
+		login: 500
 	},
 
 	data: {

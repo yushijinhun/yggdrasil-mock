@@ -31,4 +31,4 @@ yggdrasil:
     skinDomains:
     - .to2mbn.org
   rate-limit:
-    limit-duration: 1000ms
+    limit-duration: 500ms
