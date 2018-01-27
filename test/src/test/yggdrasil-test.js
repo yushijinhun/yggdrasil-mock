@@ -5,7 +5,7 @@ let expect = chai.expect;
 let YggdrasilVerifier = require("../yggdrasil-verify");
 let config = require("../../yggdrasil-config");
 
-const slowTime = 500; // ms
+const slowTime = 300; // ms
 
 let delay = (time) => (result) => new Promise(resolve => setTimeout(() => resolve(result), time));
 
@@ -412,7 +412,7 @@ describe("yggdrasil basic api", function () {
 				.then(authResponse => selectProfile(config.data.user3.character2.name, authResponse.availableProfiles, authResponse)));
 
 		this.slow(slowTime + config.rateLimits.login);
-		it("select nonexistent profile (after which old token should be still usable)",
+		it("select nonexistent profile (expecting old token to be still valid)",
 			() => authenticateUser3()
 				.then(authResponse => request.post("/authserver/refresh")
 					.send({
@@ -432,7 +432,7 @@ describe("yggdrasil basic api", function () {
 						.expect(res => verifyUser1or3RefreshResponse(res.body, authResponse)))));
 
 		this.slow(slowTime + 2 * config.rateLimits.login);
-		it("select another user's profile (after which old token should be still usable)",
+		it("select another user's profile (expecting old token to be still valid)",
 			() => authenticateUser2()
 				.then(res => res.selectedProfile)
 				.then(othersProfile => authenticateUser3()
@@ -451,7 +451,7 @@ describe("yggdrasil basic api", function () {
 							.expect(res => verifyUser1or3RefreshResponse(res.body, authResponse))))));
 
 		this.slow(slowTime + config.rateLimits.login);
-		it("select profile with an already-bound token",
+		it("select profile with an already-bound token (expecting to fail)",
 			() => authenticateUser3()
 				.then(authResponse => selectProfile(config.data.user3.character2.name, authResponse.availableProfiles, authResponse)
 					.then(lastResponse => request.post("/authserver/refresh")
@@ -528,7 +528,7 @@ describe("yggdrasil basic api", function () {
 				.then(lastResponse => tokenShouldBeInvalid(lastResponse.accessToken)));
 
 		this.slow(slowTime + config.rateLimits.login);
-		it("user1 with clientToken",
+		it("user1 with clientToken (expecting token to be invalid)",
 			() => authenticateUser1()
 				.then(authResponse => request.post("/authserver/invalidate")
 					.send({
@@ -540,7 +540,7 @@ describe("yggdrasil basic api", function () {
 				.then(lastResponse => tokenShouldBeInvalid(lastResponse.accessToken)));
 
 		this.slow(slowTime + config.rateLimits.login);
-		it("user1",
+		it("user1 (expecting token to be invalid)",
 			() => authenticateUser1()
 				.then(authResponse => request.post("/authserver/invalidate")
 					.send({
@@ -551,7 +551,7 @@ describe("yggdrasil basic api", function () {
 				.then(lastResponse => tokenShouldBeInvalid(lastResponse.accessToken)));
 
 		this.slow(slowTime + config.rateLimits.login);
-		it("user1 (after which token should be un-refreshable)",
+		it("user1 (expecting token to be un-refreshable)",
 			() => authenticateUser1()
 				.then(authResponse => request.post("/authserver/invalidate")
 					.send({
@@ -562,7 +562,7 @@ describe("yggdrasil basic api", function () {
 				.then(lastResponse => tokenShouldBeUnrefreshable(lastResponse.accessToken)));
 
 		this.slow(slowTime + 2 * config.rateLimits.login);
-		it("should not affect other tokens",
+		it("should not affect other tokens (expecting revoked token to be un-refreshable)",
 			() => authenticateUser1()
 				.then(authResponse1 => authenticateUser1()
 					.then(authResponse2 => [authResponse1, authResponse2]))
@@ -572,7 +572,7 @@ describe("yggdrasil basic api", function () {
 					})
 					.expect(204)
 					.then(() => authResponses))
-				.then(authResponses => tokenShouldBeInvalid(authResponses[0].accessToken)
+				.then(authResponses => tokenShouldBeUnrefreshable(authResponses[0].accessToken)
 					.then(() => authResponses))
 				.then(authResponses => tokenShouldBeValid(authResponses[1].accessToken)));
 
@@ -602,29 +602,29 @@ describe("yggdrasil basic api", function () {
 				.then(delay(config.rateLimits.login)));
 
 		this.slow(slowTime + 2 * config.rateLimits.login);
-		it("user1",
+		it("user1 (expecting token to be invalid)",
 			() => authenticateUser1()
 				.then(authResponse => signoutUser1()
 					.then(() => authResponse))
 				.then(lastResponse => tokenShouldBeInvalid(lastResponse.accessToken)));
 
 		this.slow(slowTime + 2 * config.rateLimits.login);
-		it("user1 (after which token should be un-refreshable)",
+		it("user1 (expecting token to be un-refreshable)",
 			() => authenticateUser1()
 				.then(authResponse => signoutUser1()
 					.then(() => authResponse))
 				.then(lastResponse => tokenShouldBeUnrefreshable(lastResponse.accessToken)));
 
 		this.slow(slowTime + 3 * config.rateLimits.login);
-		it("should revoke all tokens",
+		it("should revoke all tokens (expecting tokens to be un-refreshable)",
 			() => authenticateUser1()
 				.then(authResponse1 => authenticateUser1()
 					.then(authResponse2 => [authResponse1, authResponse2]))
 				.then(authResponses => signoutUser1()
 					.then(() => authResponses))
-				.then(authResponses => tokenShouldBeInvalid(authResponses[0].accessToken)
+				.then(authResponses => tokenShouldBeUnrefreshable(authResponses[0].accessToken)
 					.then(() => authResponses))
-				.then(authResponses => tokenShouldBeInvalid(authResponses[1].accessToken)));
+				.then(authResponses => tokenShouldBeUnrefreshable(authResponses[1].accessToken)));
 
 		this.slow(slowTime + config.rateLimits.login);
 		it("rate limit",
@@ -642,9 +642,5 @@ describe("yggdrasil basic api", function () {
 					.expect(403)
 					.expect(exception("ForbiddenOperationException")))
 				.then(delay(config.rateLimits.login)));
-	});
-
-	describe("token lifecycle", function () {
-		// TODO
 	});
 });
