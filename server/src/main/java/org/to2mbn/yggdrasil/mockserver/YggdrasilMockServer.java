@@ -6,12 +6,15 @@ import static java.util.Map.ofEntries;
 import static org.apache.commons.io.IOUtils.resourceToString;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.util.UriBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Configuration
 @ConfigurationProperties(prefix = "yggdrasil.core", ignoreUnknownFields = false)
@@ -23,6 +26,7 @@ public class YggdrasilMockServer {
 	}
 
 	private List<String> skinDomains;
+	private String url;
 
 	@Bean
 	public String publickeyPem() throws IOException {
@@ -41,11 +45,24 @@ public class YggdrasilMockServer {
 		return meta;
 	}
 
+	@Bean
+	public Supplier<UriBuilder> rootUrl() {
+		return () -> UriComponentsBuilder.fromHttpUrl(url);
+	}
+
 	public List<String> getSkinDomains() {
 		return skinDomains;
 	}
 
 	public void setSkinDomains(List<String> skinDomains) {
 		this.skinDomains = skinDomains;
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
 	}
 }

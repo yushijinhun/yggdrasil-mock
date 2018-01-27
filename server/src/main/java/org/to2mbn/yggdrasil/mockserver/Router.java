@@ -1,11 +1,15 @@
 package org.to2mbn.yggdrasil.mockserver;
 
+import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.CacheControl.maxAge;
 import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
+import static org.springframework.http.MediaType.IMAGE_PNG;
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static org.springframework.web.reactive.function.server.ServerResponse.noContent;
+import static org.springframework.web.reactive.function.server.ServerResponse.notFound;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.randomUnsignedUUID;
 import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.toUUID;
@@ -162,6 +166,16 @@ public class Router {
 					.contentType(APPLICATION_JSON_UTF8)
 					.syncBody(result))
 				.switchIfEmpty(Mono.defer(() -> { throw newIllegalArgumentException("empty request"); })))
+
+		.andRoute(GET("/textures/{hash:[a-f0-9]{64}}"),
+			request -> database.findTextureByHash(request.pathVariable("hash"))
+				.map(texture -> ok()
+					.contentType(IMAGE_PNG)
+					.contentLength(texture.getData().length)
+					.eTag(texture.getHash())
+					.cacheControl(maxAge(30, DAYS).cachePublic())
+					.syncBody(texture.getData()))
+				.orElseGet(() -> notFound().build()))
 		// @formatter:on
 		;
 	}

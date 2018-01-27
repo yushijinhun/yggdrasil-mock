@@ -12,6 +12,13 @@ import static java.util.Optional.ofNullable;
 import static org.to2mbn.yggdrasil.mockserver.PropertiesUtils.base64Encoded;
 import static org.to2mbn.yggdrasil.mockserver.PropertiesUtils.properties;
 import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.unsign;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,9 +26,15 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.annotation.PostConstruct;
+import javax.imageio.ImageIO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriBuilder;
 
 @Component
 @ConfigurationProperties(prefix = "yggdrasil.database", ignoreUnknownFields = false)
@@ -66,7 +79,8 @@ public class YggdrasilDatabase {
 		private UUID uuid;
 		private String name;
 		private ModelType model;
-		private Map<TextureType, String> textures;
+		private Map<TextureType, String> texturesLocations;
+		private Map<TextureType, Texture> textures;
 		private YggdrasilUser owner;
 
 		public UUID getUuid() {
@@ -93,11 +107,19 @@ public class YggdrasilDatabase {
 			this.model = model;
 		}
 
-		public Map<TextureType, String> getTextures() {
+		public Map<TextureType, String> getTexturesLocations() {
+			return texturesLocations;
+		}
+
+		public void setTexturesLocations(Map<TextureType, String> texturesLocations) {
+			this.texturesLocations = texturesLocations;
+		}
+
+		public Map<TextureType, Texture> getTextures() {
 			return textures;
 		}
 
-		public void setTextures(Map<TextureType, String> textures) {
+		public void setTextures(Map<TextureType, Texture> textures) {
 			this.textures = textures;
 		}
 
@@ -121,14 +143,14 @@ public class YggdrasilDatabase {
 
 		public Map<String, Object> toCompleteResponse(boolean signed) {
 			Map<TextureType, Object> texturesResponse = new LinkedHashMap<>();
-			textures.forEach((type, url) -> {
+			textures.forEach((type, texture) -> {
 				// @formatter:off
 				texturesResponse.put(type, type.getMetadata(this)
 					.map(metadata -> ofEntries(
-						entry("url", url),
+						entry("url", texture.url),
 						entry("metadata", metadata)
 					))
-					.orElseGet(() -> singletonMap("url", url))
+					.orElseGet(() -> singletonMap("url", texture.url))
 				);
 				// @formatter:on
 			});
@@ -202,12 +224,91 @@ public class YggdrasilDatabase {
 		}
 	}
 
+	public static class Texture {
+		private String hash;
+		private byte[] data;
+		private String url;
+
+		public String getHash() {
+			return hash;
+		}
+
+		public void setHash(String hash) {
+			this.hash = hash;
+		}
+
+		public byte[] getData() {
+			return data;
+		}
+
+		public void setData(byte[] data) {
+			this.data = data;
+		}
+
+		public String getUrl() {
+			return url;
+		}
+
+		public void setUrl(String url) {
+			this.url = url;
+		}
+
+		public static String computeTextureId(BufferedImage img) {
+			MessageDigest digest;
+			try {
+				digest = MessageDigest.getInstance("SHA-256");
+			} catch (NoSuchAlgorithmException e) {
+				throw new RuntimeException(e);
+			}
+			int width = img.getWidth();
+			int height = img.getHeight();
+			byte[] buf = new byte[4096];
+
+			putInt(buf, 0, width);
+			putInt(buf, 4, height);
+			int pos = 8;
+			for (int x = 0; x < width; x++) {
+				for (int y = 0; y < height; y++) {
+					putInt(buf, pos, img.getRGB(x, y));
+					if (buf[pos + 0] == 0xff) {
+						buf[pos + 1] = buf[pos + 2] = buf[pos + 3] = 0;
+					}
+					pos += 4;
+					if (pos == buf.length) {
+						pos = 0;
+						digest.update(buf, 0, buf.length);
+					}
+				}
+			}
+			if (pos > 0) {
+				digest.update(buf, 0, pos);
+			}
+
+			byte[] sha256 = digest.digest();
+			return String.format("%0" + (sha256.length << 1) + "x", new BigInteger(1, sha256));
+		}
+
+		private static void putInt(byte[] array, int offset, int x) {
+			array[offset + 0] = (byte) (x >> 24 & 0xff);
+			array[offset + 1] = (byte) (x >> 16 & 0xff);
+			array[offset + 2] = (byte) (x >> 8 & 0xff);
+			array[offset + 3] = (byte) (x >> 0 & 0xff);
+		}
+	}
+
 	private List<YggdrasilUser> users;
 
 	private Map<UUID, YggdrasilUser> id2user = new ConcurrentHashMap<>();
 	private Map<String, YggdrasilUser> email2user = new ConcurrentHashMap<>();
 	private Map<UUID, YggdrasilCharacter> uuid2character = new ConcurrentHashMap<>();
 	private Map<String, YggdrasilCharacter> name2character = new ConcurrentHashMap<>();
+	private Map<String, Texture> hash2texture = new ConcurrentHashMap<>();
+
+	@Value("#{rootUrl}")
+	private Supplier<UriBuilder> rootUrl;
+
+	@Autowired
+	private ApplicationContext ctx;
 
 	@PostConstruct
 	private void buildDatabase() {
@@ -244,10 +345,35 @@ public class YggdrasilDatabase {
 		if (character.uuid == null) character.uuid = UUID.randomUUID();
 		if (character.name == null) throw new IllegalArgumentException("name is missing");
 		if (character.model == null) character.model = ModelType.STEVE;
-		if (character.textures == null) character.textures = emptyMap();
+		if (character.texturesLocations == null) character.texturesLocations = emptyMap();
+
+		character.textures = new LinkedHashMap<>();
+		character.texturesLocations.forEach((type, location) -> character.textures.put(type, processTexture(location)));
 
 		if (uuid2character.put(character.uuid, character) != null) throw new IllegalArgumentException("uuid conflict");
 		if (name2character.put(character.name, character) != null) throw new IllegalArgumentException("name conflict");
+	}
+
+	private Texture processTexture(String location) {
+		BufferedImage img;
+		try {
+			img = ImageIO.read(ctx.getResource(location).getInputStream());
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+		return hash2texture.computeIfAbsent(Texture.computeTextureId(img), hash -> {
+			Texture texture = new Texture();
+			texture.hash = hash;
+			ByteArrayOutputStream bout = new ByteArrayOutputStream();
+			try {
+				ImageIO.write(img, "png", bout);
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
+			}
+			texture.data = bout.toByteArray();
+			texture.url = rootUrl.get().path("/textures/{hash}").build(hash).toString();
+			return texture;
+		});
 	}
 
 	public Optional<YggdrasilUser> findUserById(UUID id) {
@@ -264,6 +390,10 @@ public class YggdrasilDatabase {
 
 	public Optional<YggdrasilCharacter> findCharacterByName(String name) {
 		return ofNullable(name2character.get(name));
+	}
+
+	public Optional<Texture> findTextureByHash(String hash) {
+		return ofNullable(hash2texture.get(hash));
 	}
 
 	public List<YggdrasilUser> getUsers() {
