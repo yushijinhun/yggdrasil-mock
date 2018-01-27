@@ -104,6 +104,20 @@ class YggdrasilVerifier {
 			this.verifyUser(response.user);
 		}
 	}
+
+	verifyNameQueryResponse(response) {
+		let result = new Map();
+		let uuidSet = new Set();
+		expect(response).to.be.an("array");
+		response.forEach(element => {
+			this.verifySimpleCharacter(element);
+			expect(result).to.not.have.key(element.name);
+			expect(uuidSet).to.not.include(element.id);
+			result.set(element.name, element.id);
+			uuidSet.add(element.id);
+		});
+		return result;
+	}
 }
 
 module.exports = YggdrasilVerifier;

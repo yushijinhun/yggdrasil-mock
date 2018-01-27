@@ -643,4 +643,57 @@ describe("yggdrasil basic api", function () {
 					.expect(exception("ForbiddenOperationException")))
 				.then(delay(config.rateLimits.login)));
 	});
+
+	describe("query character names", function () {
+
+		it("empty payload",
+			() => request.post("/api/profiles/minecraft")
+				.send([])
+				.expect(200)
+				.expect(res =>
+					expect(res.body).to.be.an("array").that.is.empty));
+
+		it("a nonexistent character",
+			() => request.post("/api/profiles/minecraft")
+				.send(["characterNotExists"])
+				.expect(200)
+				.expect(res =>
+					expect(res.body).to.be.an("array").that.is.empty));
+
+		it("character1",
+			() => request.post("/api/profiles/minecraft")
+				.send([config.data.user2.character1.name])
+				.expect(200)
+				.expect(res => {
+					let result = verify.verifyNameQueryResponse(res.body);
+					expect(result).to.have.key(config.data.user2.character1.name);
+				}));
+
+		it("a nonexistent character and character1",
+			() => request.post("/api/profiles/minecraft")
+				.send(["characterNotExists", config.data.user2.character1.name])
+				.expect(200)
+				.expect(res => {
+					let result = verify.verifyNameQueryResponse(res.body);
+					expect(result).to.have.key(config.data.user2.character1.name);
+				}));
+
+		it("duplicated character1",
+			() => request.post("/api/profiles/minecraft")
+				.send([config.data.user2.character1.name, config.data.user2.character1.name])
+				.expect(200)
+				.expect(res => {
+					let result = verify.verifyNameQueryResponse(res.body);
+					expect(result).to.have.key(config.data.user2.character1.name);
+				}));
+
+		it("character1 and character2",
+			() => request.post("/api/profiles/minecraft")
+				.send([config.data.user2.character1.name, config.data.user3.character1.name])
+				.expect(200)
+				.expect(res => {
+					let result = verify.verifyNameQueryResponse(res.body);
+					expect(result).to.have.all.keys([config.data.user2.character1.name, config.data.user3.character1.name]);
+				}));
+	});
 });

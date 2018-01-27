@@ -18,6 +18,8 @@ import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.newFo
 import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.newIllegalArgumentException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -145,8 +147,23 @@ public class Router {
 					tokenStore.revokeAll(user);
 					return noContent().build();
 				})
-				.switchIfEmpty(Mono.defer(() -> { throw newIllegalArgumentException(m_no_credentials); })));
+				.switchIfEmpty(Mono.defer(() -> { throw newIllegalArgumentException(m_no_credentials); })))
+
+		.andRoute(POST("/api/profiles/minecraft"),
+			request -> request.bodyToMono(String[].class)
+				.map(Stream::of)
+				.map(names -> names
+					.distinct()
+					.map(database::findCharacterByName)
+					.flatMap(Optional::stream)
+					.map(YggdrasilCharacter::toSimpleResponse)
+					.collect(toList()))
+				.flatMap(result -> ok()
+					.contentType(APPLICATION_JSON_UTF8)
+					.syncBody(result))
+				.switchIfEmpty(Mono.defer(() -> { throw newIllegalArgumentException("empty request"); })))
 		// @formatter:on
+		;
 	}
 
 	private void rateLimit(YggdrasilUser user) {
