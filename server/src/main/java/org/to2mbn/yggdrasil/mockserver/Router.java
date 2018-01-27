@@ -176,6 +176,15 @@ public class Router {
 					.cacheControl(maxAge(30, DAYS).cachePublic())
 					.syncBody(texture.getData()))
 				.orElseGet(() -> notFound().build()))
+
+		.andRoute(GET("/sessionserver/session/minecraft/profile/{uuid:[a-f0-9]{32}}"),
+			request -> database.findCharacterByUUID(toUUID(request.pathVariable("uuid")))
+				.map(character -> character.toCompleteResponse(
+					request.queryParam("unsigned").map(it -> it.equals("false")).orElse(false)))
+				.map(response -> ok()
+					.contentType(APPLICATION_JSON_UTF8)
+					.syncBody(response))
+				.orElseGet(() -> noContent().build()))
 		// @formatter:on
 		;
 	}
