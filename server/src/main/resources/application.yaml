@@ -33,3 +33,5 @@ yggdrasil:
     - localhost
   rate-limit:
     limit-duration: 500ms
+  session:
+    auth-expire-time: 15s

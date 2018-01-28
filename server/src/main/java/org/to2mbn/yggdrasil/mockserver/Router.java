@@ -13,6 +13,7 @@ import static org.springframework.web.reactive.function.server.ServerResponse.no
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.randomUnsignedUUID;
 import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.toUUID;
+import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.unsign;
 import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.m_invalid_credentials;
 import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.m_invalid_token;
 import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.m_no_credentials;
@@ -20,6 +21,8 @@ import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.m_pro
 import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.m_token_already_assigned;
 import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.newForbiddenOperationException;
 import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.newIllegalArgumentException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +32,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.Nullable;
 import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import org.to2mbn.yggdrasil.mockserver.TokenStore.Token;
 import org.to2mbn.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilCharacter;
@@ -50,6 +54,9 @@ public class Router {
 
 	@Autowired
 	private TokenStore tokenStore;
+
+	@Autowired
+	private SessionAuthenticator sessionAuth;
 
 	@Bean
 	public RouterFunction<ServerResponse> apiRouter() {
@@ -185,8 +192,50 @@ public class Router {
 					.contentType(APPLICATION_JSON_UTF8)
 					.syncBody(response))
 				.orElseGet(() -> noContent().build()))
+
+		.andRoute(POST("/sessionserver/session/minecraft/join"),
+			request -> request.bodyToMono(JoinServerRequest.class)
+				.flatMap(req -> {
+					if (req.serverId == null)
+						throw newIllegalArgumentException("serverId is null");
+					if (req.selectedProfile == null)
+						throw newIllegalArgumentException("selectedProfile is null");
+
+					Token token = authenticated(req.accessToken, null, AvailableLevel.COMPLETE);
+					if (token.getBoundCharacter().isPresent()
+							&& unsign(token.getBoundCharacter().get().getUuid()).equals(req.selectedProfile)) {
+						sessionAuth.joinServer(token, req.serverId, getRemoteAddr(request).orElse(null));
+						return noContent().build();
+					} else {
+						throw newForbiddenOperationException("invalid profile");
+					}
+				})
+				.switchIfEmpty(Mono.defer(() -> { throw newIllegalArgumentException("empty request"); })))
+
+		.andRoute(GET("/sessionserver/session/minecraft/hasJoined"),
+			request -> {
+				Optional<String> serverId = request.queryParam("serverId");
+				Optional<String> username = request.queryParam("username");
+				Optional<String> ip = request.queryParam("ip");
+				if (serverId.isPresent() && username.isPresent()) {
+					Optional<YggdrasilCharacter> character = sessionAuth.verifyUser(username.get(), serverId.get(), ip.orElse(null));
+					if (character.isPresent()) {
+						return ok()
+							.contentType(APPLICATION_JSON_UTF8)
+							.syncBody(character.get().toCompleteResponse(true));
+					}
+				}
+				return noContent().build();
+			})
 		// @formatter:on
 		;
+	}
+
+	private Optional<String> getRemoteAddr(ServerRequest request) {
+		return request.attribute(IpAttributeFilter.ATTR_REMOTE_ADDR)
+				.map(InetSocketAddress.class::cast)
+				.map(InetSocketAddress::getAddress)
+				.map(InetAddress::getHostAddress);
 	}
 
 	private void rateLimit(YggdrasilUser user) {
@@ -274,6 +323,13 @@ public class Router {
 	public static class SignoutRequest {
 		public String username;
 		public String password;
+	}
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	public static class JoinServerRequest {
+		public String accessToken;
+		public String selectedProfile;
+		public String serverId;
 	}
 	// --------
 
