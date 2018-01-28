@@ -7,21 +7,21 @@ yggdrasil:
       password: 222222
       characters:
       - name: character1
-        model: STEVE
+        model: steve
         textures-locations:
-          SKIN: classpath:textures/hatsune_miku.png
-          CAPE: classpath:textures/mojang_cape.png
+          skin: classpath:textures/hatsune_miku.png
+          cape: classpath:textures/mojang_cape.png
     - email: test3@to2mbn.org
       password: 333333
       characters:
       - name: character2
-        model: STEVE
+        model: steve
         textures-locations:
-          SKIN: classpath:textures/1_8_texturemap_redux.png
+          skin: classpath:textures/1_8_texturemap_redux.png
       - name: character3
-        model: ALEX
+        model: alex
         textures-locations:
-          CAPE: classpath:textures/mojang_cape.png
+          cape: classpath:textures/mojang_cape.png
   token:
     time-to-fully-expired: 20m
     enable-time-to-partially-expired: true
@@ -29,7 +29,7 @@ yggdrasil:
     only-last-session-available: false
   core:
     url: http://localhost:8080/
-    skinDomains:
+    skin-domains:
     - localhost
   rate-limit:
     limit-duration: 500ms
