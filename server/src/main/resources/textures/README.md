@@ -1,5 +1,19 @@
 **This part of the repository is not licensed under GPLv3 License.**
 
-* `mojang_cape.png` Copyright Mojang AB. [Link](https://minecraft.gamepedia.com/File:MojangCape2016.png)
-* `hatsune_miku.png` Copyright xilefian. [Link](http://www.minecraftforum.net/forums/mapping-and-modding/skins/2646900-hatsune-miku-skin-1-9-transparency-layers)
-* `1_8_texturemap_redux.png` Copyright Mojang AB. [Link](https://minecraft.gamepedia.com/File:1_8_texturemap_redux.png)
+In this directory are example skins and capes. They are copyrighted by their original authors. Thank them for permitting us to use their works here.
+
+|File(s)|Original author(s)|Link(s)|
+|-------|------------------|-------|
+|`eromanga/*`|ElizaMozi|[Original post](http://www.mcbbs.net/thread-705557-1-1.html)(Chinese); [Approval of use](http://www.mcbbs.net/forum.php?mod=viewthread&tid=705557&page=50#pid12693907)(Chinese);|
+
+
+Metadata of textures:
+
+|File|Type|HD?|
+|----|----|---|
+|`eromanga/sagiri_lzumi.png`  |Skin, 1.8+, Alex |No |
+|`eromanga/masamune_lzumi.png`|Skin, 1.8+, Steve|No |
+|`eromanga/elf_yamada.png`    |Skin, 1.8+, Alex |No |
+|`eromanga/muramasa_senju.png`|Skin, 1.8+, Alex |No |
+|`eromanga/tomoe_takasago.png`|Skin, 1.8+, Alex |No |
+|`eromanga/tomoe_takasago.png`|Skin, 1.8+, Alex |No |

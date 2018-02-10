@@ -9,19 +9,19 @@ yggdrasil:
       - name: character1
         model: steve
         textures-locations:
-          skin: classpath:textures/hatsune_miku.png
-          cape: classpath:textures/mojang_cape.png
+          skin: classpath:textures/eromanga/masamune_lzumi.png
+          cape: "https://d1u5p3l4wpay3k.cloudfront.net/minecraft_gamepedia/5/57/MojangCape2016.png?version=eb4f4be57ef687664299dbef606ec874" # TODO use local texture
     - email: test3@to2mbn.org
       password: 333333
       characters:
       - name: character2
         model: alex
         textures-locations:
-          skin: classpath:textures/1_8_texturemap_redux.png # TODO: change to alex skin
+          skin: classpath:textures/eromanga/elf_yamada.png
       - name: character3
         model: steve
         textures-locations:
-          cape: classpath:textures/mojang_cape.png
+          cape: "https://d1u5p3l4wpay3k.cloudfront.net/minecraft_gamepedia/5/57/MojangCape2016.png?version=eb4f4be57ef687664299dbef606ec874" # TODO use local texture
   token:
     time-to-fully-expired: 20m
     enable-time-to-partially-expired: true
