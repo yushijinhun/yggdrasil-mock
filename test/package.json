@@ -19,6 +19,7 @@
 	"dependencies": {
 		"chai": "^4.1.2",
 		"mocha": "^4.0.1",
+		"pngjs": "^3.3.1",
 		"supertest": "^3.0.0",
 		"ursa": "^0.9.4"
 	}

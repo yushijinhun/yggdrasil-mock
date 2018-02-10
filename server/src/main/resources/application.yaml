@@ -15,11 +15,11 @@ yggdrasil:
       password: 333333
       characters:
       - name: character2
-        model: steve
-        textures-locations:
-          skin: classpath:textures/1_8_texturemap_redux.png
-      - name: character3
         model: alex
+        textures-locations:
+          skin: classpath:textures/1_8_texturemap_redux.png # TODO: change to alex skin
+      - name: character3
+        model: steve
         textures-locations:
           cape: classpath:textures/mojang_cape.png
   token:
@@ -32,6 +32,6 @@ yggdrasil:
     skin-domains:
     - localhost
   rate-limit:
-    limit-duration: 500ms
+    limit-duration: 300ms
   session:
     auth-expire-time: 15s

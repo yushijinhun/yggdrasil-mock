@@ -3,7 +3,7 @@ module.exports = {
 
 	rateLimits: {
 		// 单位：ms
-		login: 500
+		login: 300
 	},
 
 	data: {
@@ -27,6 +27,7 @@ module.exports = {
 			password: "222222",
 			character1: {
 				// 角色须为Steve
+				// 角色须同时具有皮肤和披风
 				name: "character1"
 			}
 		},
@@ -36,11 +37,12 @@ module.exports = {
 			email: "test3@to2mbn.org",
 			password: "333333",
 			character1: {
-				// 角色须为Steve
+				// 角色须为Alex
+				// 角色须仅具有皮肤
 				name: "character2"
 			},
 			character2: {
-				// 角色须为Alex
+				// 角色须仅具有披风
 				name: "character3"
 			}
 		}

@@ -15,6 +15,7 @@ import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.unsign;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -270,7 +271,7 @@ public class YggdrasilDatabase {
 			for (int x = 0; x < width; x++) {
 				for (int y = 0; y < height; y++) {
 					putInt(buf, pos, img.getRGB(x, y));
-					if (buf[pos + 0] == 0xff) {
+					if (buf[pos + 0] == 0) {
 						buf[pos + 1] = buf[pos + 2] = buf[pos + 3] = 0;
 					}
 					pos += 4;
@@ -356,8 +357,8 @@ public class YggdrasilDatabase {
 
 	private Texture processTexture(String location) {
 		BufferedImage img;
-		try {
-			img = ImageIO.read(ctx.getResource(location).getInputStream());
+		try (InputStream in = ctx.getResource(location).getInputStream()) {
+			img = ImageIO.read(in);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}

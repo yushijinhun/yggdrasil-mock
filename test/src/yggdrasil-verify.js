@@ -14,6 +14,10 @@ function exists(x) {
 	return x !== null && x !== undefined;
 }
 
+Array.prototype.subtract = function (arr2) {
+	return this.filter(x => !arr2.includes(x));
+};
+
 class YggdrasilVerifier {
 	constructor(meta) {
 		expect(meta).to.be.an("object");
@@ -68,6 +72,13 @@ class YggdrasilVerifier {
 		expect(character.name).to.be.a("string");
 	}
 
+	verifyCompleteCharacter(character, withSignature) {
+		expect(character).to.be.an("object").that.has.all.keys("id", "name", "properties");
+		expect(character.id).to.be.a.uuid;
+		expect(character.name).to.be.a("string");
+		this.verifyProperties(character.properties, withSignature);
+	}
+
 	verifyAuthenticateResponse(response) {
 		expect(response).to.be.an("object");
 		expect(response.accessToken).to.be.a("string");
@@ -116,6 +127,70 @@ class YggdrasilVerifier {
 			result.set(element.name, element.id);
 			uuidSet.add(element.id);
 		});
+		return result;
+	}
+
+	extractAndVerifyTexturesPayload(character) {
+		let textureValue = null;
+		for (let property of character.properties) {
+			if (property.name === "textures") {
+				textureValue = property.value;
+				break;
+			}
+		}
+		if (textureValue === null) {
+			throw "No 'textures' proeprty found";
+		}
+
+		let payload = JSON.parse(new Buffer(textureValue, "base64").toString("utf8"));
+		expect(payload).to.be.an("object");
+		expect(payload.timestamp).to.be.a("number");
+		expect(payload.profileId).to.equal(character.id);
+		expect(payload.profileName).to.equal(character.name);
+		expect(payload.textures).to.be.an("object");
+
+		let result = {
+			skin: null,
+			cape: null,
+			slim: null
+		};
+
+		for (let [textureType, texture] of Object.entries(payload.textures)) {
+			expect(texture).to.be.an("object");
+			expect(texture.url).to.be.a("string");
+			switch (textureType) {
+				case "SKIN":
+					result.skin = texture.url;
+					result.slim = false;
+					expect(Object.keys(texture).subtract(["url", "metadata"])).to.be.empty;
+					if (exists(texture.metadata)) {
+						expect(texture.metadata).to.be.an("object");
+						expect(Object.keys(texture.metadata).subtract(["model"])).to.be.empty;
+						if (exists(texture.metadata.model)) {
+							switch (texture.metadata.model) {
+								case "slim":
+									result.slim = true;
+									break;
+								case "default":
+									result.slim = false;
+									break;
+								default:
+									throw `Unknown model: ${textureType}`;
+							}
+						}
+					}
+					break;
+
+				case "CAPE":
+					result.cape = texture.url;
+					expect(texture).to.have.key("url");
+					break;
+
+				default:
+					throw `Unknown texture type: ${textureType}`;
+			}
+		}
+
 		return result;
 	}
 }

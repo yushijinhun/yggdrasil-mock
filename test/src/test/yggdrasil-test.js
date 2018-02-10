@@ -4,6 +4,7 @@ let chai = require("chai");
 let expect = chai.expect;
 let YggdrasilVerifier = require("../yggdrasil-verify");
 let config = require("../../yggdrasil-config");
+require("../texture-hash");
 
 const slowTime = 300; // ms
 
@@ -645,6 +646,7 @@ describe("yggdrasil basic api", function () {
 	});
 
 	describe("query character names", function () {
+		this.slow(slowTime);
 
 		it("empty payload",
 			() => request.post("/api/profiles/minecraft")
@@ -696,4 +698,87 @@ describe("yggdrasil basic api", function () {
 					expect(result).to.have.all.keys([config.data.user2.character1.name, config.data.user3.character1.name]);
 				}));
 	});
+
+	describe("query profiles", function () {
+		this.slow(slowTime);
+
+		let character1 = config.data.user2.character1.name;
+		let character2 = config.data.user3.character1.name;
+		let character3 = config.data.user3.character2.name;
+		let uuids;
+		before(done => {
+			request.post("/api/profiles/minecraft")
+				.send([character1, character2, character3])
+				.expect(200)
+				.expect(res => {
+					uuids = verify.verifyNameQueryResponse(res.body);
+					expect(uuids).to.have.all.keys([character1, character2, character3]);
+				})
+				.end(done);
+		});
+
+		function queryCharacter(characterName, withSignature = false, urlQuery = "") {
+			return request.get("/sessionserver/session/minecraft/profile/" + uuids.get(characterName) + urlQuery)
+				.expect(200)
+				.expect(res => {
+					let response = res.body;
+					verify.verifyCompleteCharacter(response,withSignature);
+					expect(response.id).to.equal(uuids.get(characterName));
+					expect(response.name).to.equal(characterName);
+				})
+				.then(res => res.body);
+		}
+
+		it("a nonexistent character",
+			() => request.get("/sessionserver/session/minecraft/profile/992960dfc7a54afca041760004499434")
+				.expect(204));
+
+		it("character1 with unsigned=true",
+			() => queryCharacter(character1, false, "?unsigned=true")
+				.then(verify.extractAndVerifyTexturesPayload)
+				.then(it => {
+					expect(it.skin).to.not.be.null;
+					expect(it.cape).to.not.be.null;
+					expect(it.slim).to.false;
+				}));
+
+		it("character1 with unsigned=false",
+			() => queryCharacter(character1, true, "?unsigned=false")
+				.then(verify.extractAndVerifyTexturesPayload)
+				.then(it => {
+					expect(it.skin).to.not.be.null;
+					expect(it.cape).to.not.be.null;
+					expect(it.slim).to.false;
+				}));
+
+		it("character1",
+			() => queryCharacter(character1)
+				.then(verify.extractAndVerifyTexturesPayload)
+				.then(it => {
+					expect(it.skin).to.not.be.null;
+					expect(it.cape).to.not.be.null;
+					expect(it.slim).to.false;
+				}));
+
+		it("character2",
+			() => queryCharacter(character2)
+				.then(verify.extractAndVerifyTexturesPayload)
+				.then(it => {
+					expect(it.skin).to.not.be.null;
+					expect(it.cape).to.be.null;
+					expect(it.slim).to.true;
+				}));
+
+		it("character3",
+			() => queryCharacter(character3)
+				.then(verify.extractAndVerifyTexturesPayload)
+				.then(it => {
+					expect(it.skin).to.be.null;
+					expect(it.cape).to.not.be.null;
+					expect(it.slim).to.be.null;
+				}));
+
+	});
+
+	describe("textures");
 });
