@@ -15,21 +15,22 @@ Yggdrasil API测试样例，和一个简易的Yggdrasil服务端。
 
 然后你需要对你服务端的一些时限进行调整。例如Token过期需要很长时间（如几天），我们不可能等这么久再去测试，因此需要将这个时限缩短。这些时限也定义在`test/yggdrasil-config.js`中。
 
-再然后，你需要将`test/yggdrasil-config.js`中的`apiRoot`修改为你Yggdrasil服务端的API Root。
-
 然后执行：
 ```bash
 cd test
 npm i .
-npm run integration-test
+npm run integration-test [api_root]
 ```
+
+其中`[api_root]`为你服务端的URL，其默认值为`http://localhost:8080`。
 
 ## 如何用它mock Yggdrasil服务端
-账户、角色等数据都是预先在`server/src/main/resources/application.yaml`中定义好的。如果你不需要修改，你可以直接从[Jenkins](https://ci.to2mbn.org/job/yggdrasil-mock/)上下载构建好的JAR。
-
-如果你修改了，那么需要重新构建。
+你可以直接从[Jenkins](https://ci.to2mbn.org/job/yggdrasil-mock/)上下载构建好的JAR，或者通过以下命令构建：
 ```bash
 cd server
-gradle clean bootJar
+gradle
 ```
-构建输出位于`server/build/libs/`下。直接运行即可。
+
+构建输出位于`server/build/libs/`下。JAR可以直接运行。
+
+第一次运行会在当前目录下释放配置文件`application.yaml`，你可以编辑其中设置。

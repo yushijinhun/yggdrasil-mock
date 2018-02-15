@@ -7,7 +7,7 @@
 		"url": "git+https://github.com/to2mbn/yggdrasil-mock.git"
 	},
 	"scripts": {
-		"integration-test": "mocha src/test --timeout 10000",
+		"integration-test": "./integration-test.sh",
 		"test": "eslint src/** yggdrasil-config.js"
 	},
 	"author": "yushijinhun",

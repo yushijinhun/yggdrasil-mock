@@ -1,8 +1,11 @@
 #!/bin/bash
 
-TRAVIS_GRADLE_VERSION="4.4.1"
+TRAVIS_GRADLE_VERSION="4.5.1"
 APPLICATION_CONFIG='
 {
+	"server": {
+		"port": 8081
+	},
 	"yggdrasil": {
 		"token": {
 			"timeToPartiallyExpired": "2s",
@@ -54,7 +57,7 @@ onexit(){
 trap onexit EXIT
 
 # wait for application to start
-while ! lsof -i:8080>/dev/null;do
+while ! lsof -i:8081>/dev/null;do
 	if ! jobs -r|grep '\[1\]'>/dev/null;then
 		log "Server didn't start"
 		exit 1
@@ -64,4 +67,4 @@ done
 log "Server started"
 
 log "Running integration test"
-npm run integration-test
+npm run integration-test "http://localhost:8081"

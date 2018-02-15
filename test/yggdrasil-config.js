@@ -1,6 +1,4 @@
 module.exports = {
-	apiRoot: "http://localhost:8080",
-
 	rateLimits: {
 		// 单位：ms
 		login: 300

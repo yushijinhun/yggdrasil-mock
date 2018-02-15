@@ -1,6 +1,7 @@
 package org.to2mbn.yggdrasil.mockserver;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.text.MessageFormat.format;
 import static java.util.Map.entry;
 import static java.util.Map.ofEntries;
 import static org.apache.commons.io.IOUtils.resourceToString;
@@ -8,7 +9,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -21,12 +21,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 @SpringBootApplication
 public class YggdrasilMockServer {
 
-	public static void main(String[] args) throws Exception {
-		SpringApplication.run(YggdrasilMockServer.class, args);
-	}
-
 	private List<String> skinDomains;
 	private String url;
+	private String serverName;
 
 	@Bean
 	public String publickeyPem() throws IOException {
@@ -34,14 +31,18 @@ public class YggdrasilMockServer {
 	}
 
 	@Bean
-	public ServerMeta serverMeta(@Value("#{publickeyPem}") String publickeyPem) {
+	public ServerMeta serverMeta(
+			@Value("#{publickeyPem}") String publickeyPem,
+			@Value("${build.version}") String buildVersion,
+			@Value("${build.name}") String buildName,
+			@Value("${git.commit.id}") String gitCommit) {
 		ServerMeta meta = new ServerMeta();
 		meta.setSignaturePublickey(publickeyPem);
 		meta.setSkinDomains(skinDomains);
 		meta.setMeta(ofEntries(
-				entry("serverName", "yggdrasil mock server"),
-				entry("implementationName", "yggdrasil-mock-server"),
-				entry("implementationVersion", "0.0.1")));
+				entry("serverName", serverName),
+				entry("implementationName", buildName),
+				entry("implementationVersion", format("{0}-{1}", buildVersion, gitCommit.substring(0, 7)))));
 		return meta;
 	}
 
@@ -64,5 +65,13 @@ public class YggdrasilMockServer {
 
 	public void setUrl(String url) {
 		this.url = url;
+	}
+
+	public String getServerName() {
+		return serverName;
+	}
+
+	public void setServerName(String serverName) {
+		this.serverName = serverName;
 	}
 }

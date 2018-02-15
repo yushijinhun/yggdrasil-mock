@@ -71,4 +71,10 @@ public class YggdrasilWebExceptionHandler extends DefaultErrorWebExceptionHandle
 					.doOnNext((resp) -> logError(req, errorStatus));
 		});
 	}
+
+	@Override
+	protected void logError(ServerRequest request, HttpStatus errorStatus) {
+		if (errorStatus.is5xxServerError())
+			super.logError(request, errorStatus);
+	}
 }

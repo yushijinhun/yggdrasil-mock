@@ -1,3 +1,5 @@
+server:
+  port: 8080
 yggdrasil:
   database:
     users:
@@ -28,6 +30,7 @@ yggdrasil:
     time-to-partially-expired: 10m
     only-last-session-available: false
   core:
+    server-name: yggdrasil-mock-server
     url: http://localhost:8080/
     skin-domains:
     - localhost
