@@ -996,9 +996,9 @@ describe("yggdrasil basic api", function () {
 						.then(res => callback(res.body.skinDomains));
 				}
 				getDomainWhitelist(it => domains = it)
-					.then(() => query(u2character1, it => u2character1Textures = verifyU2character1(it)))
-					.then(() => query(u3character1, it => u3character1Textures = verifyU3character1(it)))
-					.then(() => query(u3character2, it => u3character2Textures = verifyU3character2(it)))
+					.then(() => query(u2character1, it => u2character1Textures = verify.extractAndVerifyTexturesPayload(it)))
+					.then(() => query(u3character1, it => u3character1Textures = verify.extractAndVerifyTexturesPayload(it)))
+					.then(() => query(u3character2, it => u3character2Textures = verify.extractAndVerifyTexturesPayload(it)))
 					.then(done);
 			});
 
