@@ -10,6 +10,9 @@ APPLICATION_CONFIG='
 		"token": {
 			"timeToPartiallyExpired": "2s",
 			"timeToFullyExpired": "4s"
+		},
+		"core": {
+			"url": "http://localhost:8081/"
 		}
 	}
 }
