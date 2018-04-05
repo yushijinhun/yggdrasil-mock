@@ -12,6 +12,9 @@ const invalidAccessToken = "fa0e97770dec465aa3c5db8d70162857";
 const invalidClientToken = "fa0e97770dec465aa3c5db8d70162857";
 const nonexistentCharacterUUID = "992960dfc7a54afca041760004499434";
 const nonexistentCharacterName = "characterNotExists";
+const nonexistentUser = "notExists@to2mbn.org";
+const nonexistentUserPassword = "123456";
+const incorrectPassword = "incorrectPassword-_-";
 
 let delay = (time) => (result) => new Promise(resolve => setTimeout(() => resolve(result), time));
 
@@ -75,6 +78,10 @@ describe("yggdrasil basic api", function () {
 			.end(done);
 	});
 
+	let u2character1 = config.data.user2.character1.name;
+	let u3character1 = config.data.user3.character1.name;
+	let u3character2 = config.data.user3.character2.name;
+
 	function authenticateUser1() {
 		return request.post("/authserver/authenticate")
 			.send({
@@ -107,9 +114,9 @@ describe("yggdrasil basic api", function () {
 			.expect(res => {
 				let response = res.body;
 				verify.verifyAuthenticateResponse(response);
-				expect(namesOf(response.availableProfiles)).to.have.members([config.data.user2.character1.name]);
+				expect(namesOf(response.availableProfiles)).to.have.members([u2character1]);
 				expect(response.selectedProfile).to.exist;
-				expect(response.selectedProfile.name).to.equal(config.data.user2.character1.name);
+				expect(response.selectedProfile.name).to.equal(u2character1);
 				expect(response.user).to.exist;
 			})
 			.then(res => res.body)
@@ -128,7 +135,7 @@ describe("yggdrasil basic api", function () {
 			.expect(res => {
 				let response = res.body;
 				verify.verifyAuthenticateResponse(response);
-				expect(namesOf(response.availableProfiles)).to.have.members([config.data.user3.character1.name, config.data.user3.character2.name]);
+				expect(namesOf(response.availableProfiles)).to.have.members([u3character1, u3character2]);
 				expect(response.selectedProfile).to.not.exist;
 				expect(response.user).to.exist;
 			})
@@ -178,8 +185,8 @@ describe("yggdrasil basic api", function () {
 		it("incorrect user",
 			() => request.post("/authserver/authenticate")
 				.send({
-					username: "notExists@to2mbn.org",
-					password: "123456",
+					username: nonexistentUser,
+					password: nonexistentUserPassword,
 					agent: agent
 				})
 				.expect(403)
@@ -190,7 +197,7 @@ describe("yggdrasil basic api", function () {
 			() => request.post("/authserver/authenticate")
 				.send({
 					username: config.data.user1.email,
-					password: "incorrectPassword-_-",
+					password: incorrectPassword,
 					agent: agent
 				})
 				.expect(403)
@@ -394,7 +401,7 @@ describe("yggdrasil basic api", function () {
 						expect(response.user).not.exist;
 						expect(response.selectedProfile).to.exist;
 						expect(response.selectedProfile.id).to.equal(authResponse.selectedProfile.id);
-						expect(response.selectedProfile.name).to.equal(config.data.user2.character1.name);
+						expect(response.selectedProfile.name).to.equal(u2character1);
 					})));
 
 		this.slow(slowTime + config.rateLimits.login);
@@ -415,7 +422,7 @@ describe("yggdrasil basic api", function () {
 		this.slow(slowTime + config.rateLimits.login);
 		it("select profile",
 			() => authenticateUser3()
-				.then(authResponse => selectProfile(config.data.user3.character2.name, authResponse.availableProfiles, authResponse)));
+				.then(authResponse => selectProfile(u3character2, authResponse.availableProfiles, authResponse)));
 
 		this.slow(slowTime + config.rateLimits.login);
 		it("select nonexistent profile (expecting old token to be still valid)",
@@ -459,11 +466,11 @@ describe("yggdrasil basic api", function () {
 		this.slow(slowTime + config.rateLimits.login);
 		it("select profile with an already-bound token (expecting to fail)",
 			() => authenticateUser3()
-				.then(authResponse => selectProfile(config.data.user3.character2.name, authResponse.availableProfiles, authResponse)
+				.then(authResponse => selectProfile(u3character2, authResponse.availableProfiles, authResponse)
 					.then(lastResponse => request.post("/authserver/refresh")
 						.send({
 							accessToken: lastResponse.accessToken,
-							selectedProfile: findProfile(config.data.user3.character1.name, authResponse.availableProfiles)
+							selectedProfile: findProfile(u3character1, authResponse.availableProfiles)
 						})
 						.expect(400)
 						.expect(exception("IllegalArgumentException")))));
@@ -590,8 +597,8 @@ describe("yggdrasil basic api", function () {
 		it("incorrect user",
 			() => request.post("/authserver/signout")
 				.send({
-					username: "notExists@to2mbn.org",
-					password: "123456"
+					username: nonexistentUser,
+					password: nonexistentUserPassword
 				})
 				.expect(403)
 				.expect(exception("ForbiddenOperationException")));
@@ -601,7 +608,7 @@ describe("yggdrasil basic api", function () {
 			() => request.post("/authserver/signout")
 				.send({
 					username: config.data.user1.email,
-					password: "incorrectPassword-_-"
+					password: incorrectPassword
 				})
 				.expect(403)
 				.expect(exception("ForbiddenOperationException"))
@@ -667,57 +674,54 @@ describe("yggdrasil basic api", function () {
 				.expect(res =>
 					expect(res.body).to.be.an("array").that.is.empty));
 
-		it("character1",
+		it(`${u2character1}`,
 			() => request.post("/api/profiles/minecraft")
-				.send([config.data.user2.character1.name])
+				.send([u2character1])
 				.expect(200)
 				.expect(res => {
 					let result = verify.verifyNameQueryResponse(res.body);
-					expect(result).to.have.key(config.data.user2.character1.name);
+					expect(result).to.have.key(u2character1);
 				}));
 
-		it("a nonexistent character and character1",
+		it(`a nonexistent character and ${u2character1}`,
 			() => request.post("/api/profiles/minecraft")
-				.send(["characterNotExists", config.data.user2.character1.name])
+				.send(["characterNotExists", u2character1])
 				.expect(200)
 				.expect(res => {
 					let result = verify.verifyNameQueryResponse(res.body);
-					expect(result).to.have.key(config.data.user2.character1.name);
+					expect(result).to.have.key(u2character1);
 				}));
 
-		it("duplicated character1",
+		it(`duplicated ${u2character1}`,
 			() => request.post("/api/profiles/minecraft")
-				.send([config.data.user2.character1.name, config.data.user2.character1.name])
+				.send([u2character1, u2character1])
 				.expect(200)
 				.expect(res => {
 					let result = verify.verifyNameQueryResponse(res.body);
-					expect(result).to.have.key(config.data.user2.character1.name);
+					expect(result).to.have.key(u2character1);
 				}));
 
-		it("character1 and character2",
+		it(`${u2character1} and ${u3character1}`,
 			() => request.post("/api/profiles/minecraft")
-				.send([config.data.user2.character1.name, config.data.user3.character1.name])
+				.send([u2character1, u3character1])
 				.expect(200)
 				.expect(res => {
 					let result = verify.verifyNameQueryResponse(res.body);
-					expect(result).to.have.all.keys([config.data.user2.character1.name, config.data.user3.character1.name]);
+					expect(result).to.have.all.keys([u2character1, u3character1]);
 				}));
 	});
 
 	describe("query profiles", function () {
 		this.slow(slowTime);
 
-		let character1 = config.data.user2.character1.name;
-		let character2 = config.data.user3.character1.name;
-		let character3 = config.data.user3.character2.name;
 		let uuids;
 		before(done => {
 			request.post("/api/profiles/minecraft")
-				.send([character1, character2, character3])
+				.send([u2character1, u3character1, u3character2])
 				.expect(200)
 				.expect(res => {
 					uuids = verify.verifyNameQueryResponse(res.body);
-					expect(uuids).to.have.all.keys([character1, character2, character3]);
+					expect(uuids).to.have.all.keys([u2character1, u3character1, u3character2]);
 				})
 				.end(done);
 		});
@@ -738,8 +742,8 @@ describe("yggdrasil basic api", function () {
 			() => request.get("/sessionserver/session/minecraft/profile/992960dfc7a54afca041760004499434")
 				.expect(204));
 
-		it("character1 with unsigned=true",
-			() => queryCharacter(character1, false, "?unsigned=true")
+		it(`${u2character1} with unsigned=true`,
+			() => queryCharacter(u2character1, false, "?unsigned=true")
 				.then(verify.extractAndVerifyTexturesPayload)
 				.then(it => {
 					expect(it.skin).to.not.be.null;
@@ -747,8 +751,8 @@ describe("yggdrasil basic api", function () {
 					expect(it.slim).to.false;
 				}));
 
-		it("character1 with unsigned=false",
-			() => queryCharacter(character1, true, "?unsigned=false")
+		it(`${u2character1} with unsigned=false`,
+			() => queryCharacter(u2character1, true, "?unsigned=false")
 				.then(verify.extractAndVerifyTexturesPayload)
 				.then(it => {
 					expect(it.skin).to.not.be.null;
@@ -756,8 +760,8 @@ describe("yggdrasil basic api", function () {
 					expect(it.slim).to.false;
 				}));
 
-		it("character1",
-			() => queryCharacter(character1)
+		it(`${u2character1}`,
+			() => queryCharacter(u2character1)
 				.then(verify.extractAndVerifyTexturesPayload)
 				.then(it => {
 					expect(it.skin).to.not.be.null;
@@ -765,8 +769,8 @@ describe("yggdrasil basic api", function () {
 					expect(it.slim).to.false;
 				}));
 
-		it("character2",
-			() => queryCharacter(character2)
+		it(`${u3character1}`,
+			() => queryCharacter(u3character1)
 				.then(verify.extractAndVerifyTexturesPayload)
 				.then(it => {
 					expect(it.skin).to.not.be.null;
@@ -774,8 +778,8 @@ describe("yggdrasil basic api", function () {
 					expect(it.slim).to.true;
 				}));
 
-		it("character3",
-			() => queryCharacter(character3)
+		it(`${u3character2}`,
+			() => queryCharacter(u3character2)
 				.then(verify.extractAndVerifyTexturesPayload)
 				.then(it => {
 					expect(it.skin).to.be.null;
@@ -794,11 +798,11 @@ describe("yggdrasil basic api", function () {
 
 		it("another user's character");
 
-		it("character1");
+		it(`${u2character1}`);
 	});
 
 	describe("has joined", function () {
-		it("character1");
+		it(`${u2character1}`);
 
 		it("incorrect username");
 
@@ -808,13 +812,13 @@ describe("yggdrasil basic api", function () {
 	});
 
 	describe("textures", function () {
-		it("skin of character1 (steve)");
+		it(`skin of ${u2character1} (steve)`);
 
-		it("cape of character1");
+		it(`cape of ${u2character1}`);
 
-		it("skin of character2 (alex)");
+		it(`skin of ${u3character1} (alex)`);
 
-		it("cape of character2");
+		it(`cape of ${u3character2}`);
 	});
 
 });
