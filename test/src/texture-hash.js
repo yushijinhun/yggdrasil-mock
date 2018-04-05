@@ -36,4 +36,4 @@ function computeTextureHash(image) {
 	return hash.digest("hex");
 }
 
-module.exports = { computeTextureHash };
+module.exports = computeTextureHash;

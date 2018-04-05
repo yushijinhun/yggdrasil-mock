@@ -1,10 +1,15 @@
+let supertest = require("supertest")("");
+let PNG = require("pngjs-nozlib").PNG;
+let streams = require("memory-streams");
 let request = require("../request");
 let ursa = require("ursa");
 let chai = require("chai");
 let expect = chai.expect;
 let YggdrasilVerifier = require("../yggdrasil-verify");
 let config = require("../../yggdrasil-config");
-require("../texture-hash");
+let crypto = require("crypto");
+let computeTextureHash = require("../texture-hash");
+const { URL } = require("url");
 
 const slowTime = 300; // ms
 
@@ -269,42 +274,42 @@ describe("yggdrasil basic api", function () {
 		it("user3", () => authenticateUser3());
 	});
 
+	function findProfile(name, availableProfiles) {
+		let characterX;
+		for (let character of availableProfiles) {
+			if (character.name === name) {
+				characterX = character;
+				break;
+			}
+		}
+		expect(characterX).to.exist;
+		return characterX;
+	}
+
+	function selectProfile(name, availableProfiles, lastResponse) {
+		let characterX = findProfile(name, availableProfiles);
+		return request.post("/authserver/refresh")
+			.send({
+				accessToken: lastResponse.accessToken,
+				selectedProfile: characterX
+			})
+			.expect(200)
+			.expect(res => {
+				let response = res.body;
+				verify.verifyRefreshResponse(response, lastResponse);
+				expect(response.user).to.not.exist;
+				expect(response.selectedProfile).to.exist;
+				expect(response.selectedProfile.id).to.equal(characterX.id);
+				expect(response.selectedProfile.name).to.equal(name);
+			})
+			.then(res => res.body);
+	}
+
 	describe("refresh", function () {
 		function verifyUser1or3RefreshResponse(response, authResponse) {
 			verify.verifyRefreshResponse(response, authResponse);
 			expect(response.selectedProfile).to.not.exist;
 			expect(response.user).to.not.exist;
-		}
-
-		function findProfile(name, availableProfiles) {
-			let characterX;
-			for (let character of availableProfiles) {
-				if (character.name === name) {
-					characterX = character;
-					break;
-				}
-			}
-			expect(characterX).to.exist;
-			return characterX;
-		}
-
-		function selectProfile(name, availableProfiles, lastResponse) {
-			let characterX = findProfile(name, availableProfiles);
-			return request.post("/authserver/refresh")
-				.send({
-					accessToken: lastResponse.accessToken,
-					selectedProfile: characterX
-				})
-				.expect(200)
-				.expect(res => {
-					let response = res.body;
-					verify.verifyRefreshResponse(response, lastResponse);
-					expect(response.user).to.not.exist;
-					expect(response.selectedProfile).to.exist;
-					expect(response.selectedProfile.id).to.equal(characterX.id);
-					expect(response.selectedProfile.name).to.equal(name);
-				})
-				.then(res => res.body);
 		}
 
 		this.slow(slowTime);
@@ -711,7 +716,7 @@ describe("yggdrasil basic api", function () {
 				}));
 	});
 
-	describe("session",function(){
+	describe("session", function () {
 		let uuids;
 		before(done => {
 			request.post("/api/profiles/minecraft")
@@ -723,6 +728,36 @@ describe("yggdrasil basic api", function () {
 				})
 				.end(done);
 		});
+
+		function verifyU2character1(character, withSignature) {
+			verify.verifyCompleteCharacter(character, withSignature);
+			expect(character.name).to.equal(u2character1);
+			let textures = verify.extractAndVerifyTexturesPayload(character);
+			expect(textures.skin).to.not.be.null;
+			expect(textures.cape).to.not.be.null;
+			expect(textures.slim).to.false;
+			return textures;
+		}
+
+		function verifyU3character1(character, withSignature) {
+			verify.verifyCompleteCharacter(character, withSignature);
+			expect(character.name).to.equal(u3character1);
+			let textures = verify.extractAndVerifyTexturesPayload(character);
+			expect(textures.skin).to.not.be.null;
+			expect(textures.cape).to.be.null;
+			expect(textures.slim).to.true;
+			return textures;
+		}
+
+		function verifyU3character2(character, withSignature) {
+			verify.verifyCompleteCharacter(character, withSignature);
+			expect(character.name).to.equal(u3character2);
+			let textures = verify.extractAndVerifyTexturesPayload(character);
+			expect(textures.skin).to.be.null;
+			expect(textures.cape).to.not.be.null;
+			expect(textures.slim).to.null;
+			return textures;
+		}
 
 		describe("query profiles", function () {
 			this.slow(slowTime);
@@ -745,81 +780,289 @@ describe("yggdrasil basic api", function () {
 
 			it(`${u2character1} with unsigned=true`,
 				() => queryCharacter(u2character1, false, "?unsigned=true")
-					.then(verify.extractAndVerifyTexturesPayload)
-					.then(it => {
-						expect(it.skin).to.not.be.null;
-						expect(it.cape).to.not.be.null;
-						expect(it.slim).to.false;
-					}));
+					.then(it => verifyU2character1(it, false)));
 
 			it(`${u2character1} with unsigned=false`,
 				() => queryCharacter(u2character1, true, "?unsigned=false")
-					.then(verify.extractAndVerifyTexturesPayload)
-					.then(it => {
-						expect(it.skin).to.not.be.null;
-						expect(it.cape).to.not.be.null;
-						expect(it.slim).to.false;
-					}));
+					.then(it => verifyU2character1(it, true)));
 
 			it(`${u2character1}`,
 				() => queryCharacter(u2character1)
-					.then(verify.extractAndVerifyTexturesPayload)
-					.then(it => {
-						expect(it.skin).to.not.be.null;
-						expect(it.cape).to.not.be.null;
-						expect(it.slim).to.false;
-					}));
+					.then(it => verifyU2character1(it, false)));
 
 			it(`${u3character1}`,
 				() => queryCharacter(u3character1)
-					.then(verify.extractAndVerifyTexturesPayload)
-					.then(it => {
-						expect(it.skin).to.not.be.null;
-						expect(it.cape).to.be.null;
-						expect(it.slim).to.true;
-					}));
+					.then(it => verifyU3character1(it, false)));
 
 			it(`${u3character2}`,
 				() => queryCharacter(u3character2)
-					.then(verify.extractAndVerifyTexturesPayload)
-					.then(it => {
-						expect(it.skin).to.be.null;
-						expect(it.cape).to.not.be.null;
-						expect(it.slim).to.be.null;
-					}));
+					.then(it => verifyU3character2(it, false)));
 
 		});
+
+		function randomServerId() {
+			return crypto.randomBytes(16).toString("hex");
+		}
+
+		function joinU2character1() {
+			return authenticateUser2()
+				.then(res => {
+					let serverid = randomServerId();
+					return request.post("/sessionserver/session/minecraft/join")
+						.send({
+							accessToken: res.accessToken,
+							selectedProfile: uuids.get(u2character1),
+							serverId: serverid
+						})
+						.expect(204)
+						.then(() => serverid);
+				});
+		}
+
+		function joinU3characterX(character) {
+			return authenticateUser3()
+				.then(authResponse => selectProfile(character, authResponse.availableProfiles, authResponse))
+				.then(res => {
+					let serverid = randomServerId();
+					return request.post("/sessionserver/session/minecraft/join")
+						.send({
+							accessToken: res.accessToken,
+							selectedProfile: uuids.get(character),
+							serverId: serverid
+						})
+						.expect(204)
+						.then(() => serverid);
+				});
+		}
+
+		function joinU3character1() {
+			return joinU3characterX(u3character1);
+		}
+
+		function joinU3character2() {
+			return joinU3characterX(u3character2);
+		}
 
 		describe("join server", function () {
-			it("incorrect accessToken");
 
-			it("nonexistent character");
+			this.slow(slowTime);
+			it("incorrect accessToken",
+				() => {
+					let serverid = randomServerId();
+					return request.post("/sessionserver/session/minecraft/join")
+						.send({
+							accessToken: invalidAccessToken,
+							selectedProfile: uuids.get(u2character1),
+							serverId: serverid
+						})
+						.expect(403)
+						.expect(exception("ForbiddenOperationException"));
+				});
 
-			it("another character that belongs to current user");
+			function testJoinFailure(authFunc, characterUUID) {
+				return authFunc()
+					.then(auth => {
+						let serverid = randomServerId();
+						return request.post("/sessionserver/session/minecraft/join")
+							.send({
+								accessToken: auth.accessToken,
+								selectedProfile: characterUUID,
+								serverId: serverid
+							})
+							.expect(403)
+							.expect(exception("ForbiddenOperationException"));
+					});
+			}
 
-			it("another user's character");
+			function testNonexistentCharacterWithUserX(authFunc) {
+				return testJoinFailure(authFunc, nonexistentCharacterUUID);
+			}
 
-			it(`${u2character1}`);
+			this.slow(slowTime + config.rateLimits.login);
+			it("nonexistent character with user1",
+				() => testNonexistentCharacterWithUserX(authenticateUser1));
+
+			this.slow(slowTime + config.rateLimits.login);
+			it("nonexistent character with user2",
+				() => testNonexistentCharacterWithUserX(authenticateUser1));
+
+			this.slow(slowTime + config.rateLimits.login);
+			it("nonexistent character with user3",
+				() => testNonexistentCharacterWithUserX(authenticateUser1));
+
+			this.slow(slowTime + config.rateLimits.login);
+			it("another character that belongs to current user (user3 with no selection)",
+				() => testJoinFailure(authenticateUser3, uuids.get(u3character1)));
+
+			this.slow(slowTime + config.rateLimits.login);
+			it("another character that belongs to current user (user3 with selection)",
+				() => authenticateUser3()
+					.then(authResponse => selectProfile(u3character1, authResponse.availableProfiles, authResponse))
+					.then(res => {
+						let serverid = randomServerId();
+						return request.post("/sessionserver/session/minecraft/join")
+							.send({
+								accessToken: res.accessToken,
+								selectedProfile: uuids.get(u3character2),
+								serverId: serverid
+							})
+							.expect(403)
+							.expect(exception("ForbiddenOperationException"));
+					}));
+
+			this.slow(slowTime + config.rateLimits.login);
+			it(`another user's character (${u2character1} with user1)`,
+				() => testJoinFailure(authenticateUser1, uuids.get(u2character1)));
+
+			this.slow(slowTime + config.rateLimits.login);
+			it(`another user's character (${u3character1} with user2)`,
+				() => testJoinFailure(authenticateUser2, uuids.get(u3character1)));
+
+			this.slow(slowTime + config.rateLimits.login);
+			it(`another user's character (${u2character1} with user3)`,
+				() => testJoinFailure(authenticateUser3, uuids.get(u2character1)));
+
+			this.slow(slowTime + config.rateLimits.login);
+			it(`${u2character1}`,
+				() => joinU2character1());
+
+			this.slow(slowTime + config.rateLimits.login);
+			it(`${u3character1}`,
+				() => joinU3character1());
+
+			this.slow(slowTime + config.rateLimits.login);
+			it(`${u3character2}`,
+				() => joinU3character2());
 		});
 
-		describe("has joined", function () {
-			it(`${u2character1}`);
+		describe("has joined server", function () {
 
-			it("incorrect username");
+			this.slow(slowTime + config.rateLimits.login);
+			it("incorrect username",
+				() => joinU2character1()
+					.then(serverid => request.get(`/sessionserver/session/minecraft/hasJoined?username=${u3character1}&serverId=${serverid}`)
+						.expect(204)));
 
-			it("incorrect serverid");
+			this.slow(slowTime + config.rateLimits.login);
+			it("incorrect serverid",
+				() => joinU2character1()
+					.then(() => request.get(`/sessionserver/session/minecraft/hasJoined?username=${u2character1}&serverId=${randomServerId()}`)
+						.expect(204)));
 
-			it("no leading join request");
+			this.slow(slowTime);
+			it("no leading join request",
+				() => request.get(`/sessionserver/session/minecraft/hasJoined?username=${u2character1}&serverId=${randomServerId()}`)
+					.expect(204));
+
+			this.slow(slowTime + config.rateLimits.login);
+			it(`${u2character1}`,
+				() => joinU2character1()
+					.then(serverid => request.get(`/sessionserver/session/minecraft/hasJoined?username=${u2character1}&serverId=${serverid}`)
+						.expect(200)
+						.expect(res => verifyU2character1(res.body, true))));
+
+			this.slow(slowTime + config.rateLimits.login);
+			it(`${u3character1}`,
+				() => joinU3character1()
+					.then(serverid => request.get(`/sessionserver/session/minecraft/hasJoined?username=${u3character1}&serverId=${serverid}`)
+						.expect(200)
+						.expect(res => verifyU3character1(res.body, true))));
+
+			this.slow(slowTime + config.rateLimits.login);
+			it(`${u3character2}`,
+				() => joinU3character2()
+					.then(serverid => request.get(`/sessionserver/session/minecraft/hasJoined?username=${u3character2}&serverId=${serverid}`)
+						.expect(200)
+						.expect(res => verifyU3character2(res.body, true))));
 		});
 
 		describe("textures", function () {
-			it(`skin of ${u2character1} (steve)`);
+			let u2character1Textures;
+			let u3character1Textures;
+			let u3character2Textures;
+			let domains;
 
-			it(`cape of ${u2character1}`);
+			before(done => {
+				function query(character, callback) {
+					return request.get("/sessionserver/session/minecraft/profile/" + uuids.get(character))
+						.expect(200)
+						.then(res => {
+							callback(res.body);
+						});
+				}
+				function getDomainWhitelist(callback) {
+					return request.get("/")
+						.expect(200)
+						.then(res => callback(res.body.skinDomains));
+				}
+				getDomainWhitelist(it => domains = it)
+					.then(() => query(u2character1, it => u2character1Textures = verifyU2character1(it)))
+					.then(() => query(u3character1, it => u3character1Textures = verifyU3character1(it)))
+					.then(() => query(u3character2, it => u3character2Textures = verifyU3character2(it)))
+					.then(done);
+			});
 
-			it(`skin of ${u3character1} (alex)`);
+			function downloadAsImage(urlString) {
+				let url = new URL(urlString);
+				let inWhitelist = false;
+				for (let domain of domains) {
+					if (url.hostname.endsWith(domain)) {
+						inWhitelist = true;
+						break;
+					}
+				}
+				expect(inWhitelist, `domain ${url.hostname} is not in whitelist`).to.be.true;
 
-			it(`cape of ${u3character2}`);
+				let stream = new streams.WritableStream();
+
+				return new Promise(
+					resolve => supertest.get(url)
+						.expect(200)
+						.pipe(stream)
+						.on("finish", resolve))
+					.then(() => {
+						let image = PNG.sync.read(stream.toBuffer());
+						let hash = computeTextureHash(image);
+
+						expect(
+							url.pathname.endsWith(hash) ||
+							url.pathname.endsWith(hash + ".png"),
+							`texture url(${url}) should end with its hash(${hash})`
+						).to.be.true;
+						return image;
+					});
+			}
+
+			function verifySkin(image) {
+				expect(
+					image.width == image.height ||
+					image.width == 2 * image.height,
+					`invalid skin size ${image.width}x${image.height}`
+				).to.be.true;
+			}
+
+			function verifyCape(image) {
+				expect(
+					image.width == 2 * image.height,
+					`invalid cape size ${image.width}x${image.height}`
+				).to.be.true;
+			}
+
+			it(`skin of ${u2character1} (steve)`,
+				() => downloadAsImage(u2character1Textures.skin)
+					.then(verifySkin));
+
+			it(`cape of ${u2character1}`,
+				() => downloadAsImage(u2character1Textures.cape)
+					.then(verifyCape));
+
+			it(`skin of ${u3character1} (alex)`,
+				() => downloadAsImage(u3character1Textures.skin)
+					.then(verifySkin));
+
+			it(`cape of ${u3character2}`,
+				() => downloadAsImage(u3character2Textures.cape)
+					.then(verifyCape));
 		});
 
 	});
