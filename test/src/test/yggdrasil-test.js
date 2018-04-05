@@ -711,9 +711,7 @@ describe("yggdrasil basic api", function () {
 				}));
 	});
 
-	describe("query profiles", function () {
-		this.slow(slowTime);
-
+	describe("session",function(){
 		let uuids;
 		before(done => {
 			request.post("/api/profiles/minecraft")
@@ -726,99 +724,104 @@ describe("yggdrasil basic api", function () {
 				.end(done);
 		});
 
-		function queryCharacter(characterName, withSignature = false, urlQuery = "") {
-			return request.get("/sessionserver/session/minecraft/profile/" + uuids.get(characterName) + urlQuery)
-				.expect(200)
-				.expect(res => {
-					let response = res.body;
-					verify.verifyCompleteCharacter(response, withSignature);
-					expect(response.id).to.equal(uuids.get(characterName));
-					expect(response.name).to.equal(characterName);
-				})
-				.then(res => res.body);
-		}
+		describe("query profiles", function () {
+			this.slow(slowTime);
 
-		it("a nonexistent character",
-			() => request.get("/sessionserver/session/minecraft/profile/992960dfc7a54afca041760004499434")
-				.expect(204));
+			function queryCharacter(characterName, withSignature = false, urlQuery = "") {
+				return request.get("/sessionserver/session/minecraft/profile/" + uuids.get(characterName) + urlQuery)
+					.expect(200)
+					.expect(res => {
+						let response = res.body;
+						verify.verifyCompleteCharacter(response, withSignature);
+						expect(response.id).to.equal(uuids.get(characterName));
+						expect(response.name).to.equal(characterName);
+					})
+					.then(res => res.body);
+			}
 
-		it(`${u2character1} with unsigned=true`,
-			() => queryCharacter(u2character1, false, "?unsigned=true")
-				.then(verify.extractAndVerifyTexturesPayload)
-				.then(it => {
-					expect(it.skin).to.not.be.null;
-					expect(it.cape).to.not.be.null;
-					expect(it.slim).to.false;
-				}));
+			it("a nonexistent character",
+				() => request.get("/sessionserver/session/minecraft/profile/992960dfc7a54afca041760004499434")
+					.expect(204));
 
-		it(`${u2character1} with unsigned=false`,
-			() => queryCharacter(u2character1, true, "?unsigned=false")
-				.then(verify.extractAndVerifyTexturesPayload)
-				.then(it => {
-					expect(it.skin).to.not.be.null;
-					expect(it.cape).to.not.be.null;
-					expect(it.slim).to.false;
-				}));
+			it(`${u2character1} with unsigned=true`,
+				() => queryCharacter(u2character1, false, "?unsigned=true")
+					.then(verify.extractAndVerifyTexturesPayload)
+					.then(it => {
+						expect(it.skin).to.not.be.null;
+						expect(it.cape).to.not.be.null;
+						expect(it.slim).to.false;
+					}));
 
-		it(`${u2character1}`,
-			() => queryCharacter(u2character1)
-				.then(verify.extractAndVerifyTexturesPayload)
-				.then(it => {
-					expect(it.skin).to.not.be.null;
-					expect(it.cape).to.not.be.null;
-					expect(it.slim).to.false;
-				}));
+			it(`${u2character1} with unsigned=false`,
+				() => queryCharacter(u2character1, true, "?unsigned=false")
+					.then(verify.extractAndVerifyTexturesPayload)
+					.then(it => {
+						expect(it.skin).to.not.be.null;
+						expect(it.cape).to.not.be.null;
+						expect(it.slim).to.false;
+					}));
 
-		it(`${u3character1}`,
-			() => queryCharacter(u3character1)
-				.then(verify.extractAndVerifyTexturesPayload)
-				.then(it => {
-					expect(it.skin).to.not.be.null;
-					expect(it.cape).to.be.null;
-					expect(it.slim).to.true;
-				}));
+			it(`${u2character1}`,
+				() => queryCharacter(u2character1)
+					.then(verify.extractAndVerifyTexturesPayload)
+					.then(it => {
+						expect(it.skin).to.not.be.null;
+						expect(it.cape).to.not.be.null;
+						expect(it.slim).to.false;
+					}));
 
-		it(`${u3character2}`,
-			() => queryCharacter(u3character2)
-				.then(verify.extractAndVerifyTexturesPayload)
-				.then(it => {
-					expect(it.skin).to.be.null;
-					expect(it.cape).to.not.be.null;
-					expect(it.slim).to.be.null;
-				}));
+			it(`${u3character1}`,
+				() => queryCharacter(u3character1)
+					.then(verify.extractAndVerifyTexturesPayload)
+					.then(it => {
+						expect(it.skin).to.not.be.null;
+						expect(it.cape).to.be.null;
+						expect(it.slim).to.true;
+					}));
 
-	});
+			it(`${u3character2}`,
+				() => queryCharacter(u3character2)
+					.then(verify.extractAndVerifyTexturesPayload)
+					.then(it => {
+						expect(it.skin).to.be.null;
+						expect(it.cape).to.not.be.null;
+						expect(it.slim).to.be.null;
+					}));
 
-	describe("join server", function () {
-		it("incorrect accessToken");
+		});
 
-		it("nonexistent character");
+		describe("join server", function () {
+			it("incorrect accessToken");
 
-		it("another character that belongs to current user");
+			it("nonexistent character");
 
-		it("another user's character");
+			it("another character that belongs to current user");
 
-		it(`${u2character1}`);
-	});
+			it("another user's character");
 
-	describe("has joined", function () {
-		it(`${u2character1}`);
+			it(`${u2character1}`);
+		});
 
-		it("incorrect username");
+		describe("has joined", function () {
+			it(`${u2character1}`);
 
-		it("incorrect serverid");
+			it("incorrect username");
 
-		it("no leading join request");
-	});
+			it("incorrect serverid");
 
-	describe("textures", function () {
-		it(`skin of ${u2character1} (steve)`);
+			it("no leading join request");
+		});
 
-		it(`cape of ${u2character1}`);
+		describe("textures", function () {
+			it(`skin of ${u2character1} (steve)`);
 
-		it(`skin of ${u3character1} (alex)`);
+			it(`cape of ${u2character1}`);
 
-		it(`cape of ${u3character2}`);
+			it(`skin of ${u3character1} (alex)`);
+
+			it(`cape of ${u3character2}`);
+		});
+
 	});
 
 });
