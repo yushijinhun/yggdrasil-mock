@@ -785,8 +785,36 @@ describe("yggdrasil basic api", function () {
 
 	});
 
-	// describe("textures");
+	describe("join server", function () {
+		it("incorrect accessToken");
 
-	// describe("session");
+		it("nonexistent character");
+
+		it("another character that belongs to current user");
+
+		it("another user's character");
+
+		it("character1");
+	});
+
+	describe("has joined", function () {
+		it("character1");
+
+		it("incorrect username");
+
+		it("incorrect serverid");
+
+		it("no leading join request");
+	});
+
+	describe("textures", function () {
+		it("skin of character1 (steve)");
+
+		it("cape of character1");
+
+		it("skin of character2 (alex)");
+
+		it("cape of character2");
+	});
 
 });
