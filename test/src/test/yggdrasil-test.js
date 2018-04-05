@@ -8,6 +8,11 @@ require("../texture-hash");
 
 const slowTime = 300; // ms
 
+const invalidAccessToken = "fa0e97770dec465aa3c5db8d70162857";
+const invalidClientToken = "fa0e97770dec465aa3c5db8d70162857";
+const nonexistentCharacterUUID = "992960dfc7a54afca041760004499434";
+const nonexistentCharacterName = "characterNotExists";
+
 let delay = (time) => (result) => new Promise(resolve => setTimeout(() => resolve(result), time));
 
 let agent = {
@@ -299,7 +304,7 @@ describe("yggdrasil basic api", function () {
 		it("incorrect accessToken",
 			() => request.post("/authserver/refresh")
 				.send({
-					accessToken: "fa0e97770dec465aa3c5db8d70162857"
+					accessToken: invalidAccessToken
 				})
 				.expect(403)
 				.expect(exception("ForbiddenOperationException")));
@@ -310,7 +315,7 @@ describe("yggdrasil basic api", function () {
 				.then(authResponse => request.post("/authserver/refresh")
 					.send({
 						accessToken: authResponse.accessToken,
-						clientToken: "fa0e97770dec465aa3c5db8d70162857"
+						clientToken: invalidClientToken
 					})
 					.expect(403)
 					.expect(exception("ForbiddenOperationException"))));
@@ -419,8 +424,8 @@ describe("yggdrasil basic api", function () {
 					.send({
 						accessToken: authResponse.accessToken,
 						selectedProfile: {
-							id: "992960dfc7a54afca041760004499434",
-							name: "characterNotExists"
+							id: nonexistentCharacterUUID,
+							name: nonexistentCharacterName
 						}
 					})
 					.expect(400)
@@ -470,7 +475,7 @@ describe("yggdrasil basic api", function () {
 		it("incorrect accessToken",
 			() => request.post("/authserver/validate")
 				.send({
-					accessToken: "fa0e97770dec465aa3c5db8d70162857"
+					accessToken: invalidAccessToken
 				})
 				.expect(403)
 				.expect(exception("ForbiddenOperationException")));
@@ -481,7 +486,7 @@ describe("yggdrasil basic api", function () {
 				.then(authResponse => request.post("/authserver/validate")
 					.send({
 						accessToken: authResponse.accessToken,
-						clientToken: "fa0e97770dec465aa3c5db8d70162857"
+						clientToken: invalidClientToken
 					})
 					.expect(403)
 					.expect(exception("ForbiddenOperationException"))));
@@ -512,7 +517,7 @@ describe("yggdrasil basic api", function () {
 		it("incorrect accessToken",
 			() => request.post("/authserver/invalidate")
 				.send({
-					accessToken: "fa0e97770dec465aa3c5db8d70162857"
+					accessToken: invalidAccessToken
 				})
 				.expect(204));
 
@@ -522,7 +527,7 @@ describe("yggdrasil basic api", function () {
 				.then(authResponse => request.post("/authserver/invalidate")
 					.send({
 						accessToken: authResponse.accessToken,
-						clientToken: "fa0e97770dec465aa3c5db8d70162857"
+						clientToken: invalidClientToken
 					})
 					.expect(204)
 					.then(() => authResponse))
@@ -657,7 +662,7 @@ describe("yggdrasil basic api", function () {
 
 		it("a nonexistent character",
 			() => request.post("/api/profiles/minecraft")
-				.send(["characterNotExists"])
+				.send([nonexistentCharacterName])
 				.expect(200)
 				.expect(res =>
 					expect(res.body).to.be.an("array").that.is.empty));
@@ -722,7 +727,7 @@ describe("yggdrasil basic api", function () {
 				.expect(200)
 				.expect(res => {
 					let response = res.body;
-					verify.verifyCompleteCharacter(response,withSignature);
+					verify.verifyCompleteCharacter(response, withSignature);
 					expect(response.id).to.equal(uuids.get(characterName));
 					expect(response.name).to.equal(characterName);
 				})
