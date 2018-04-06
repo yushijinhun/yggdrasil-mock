@@ -218,7 +218,6 @@ public class YggdrasilDatabase {
 			ofEntries(
 				entry("id", unsign(id)),
 				entry("properties", properties(
-					// TODO preferredLanguage?
 				))
 			);
 			// @formatter:on
