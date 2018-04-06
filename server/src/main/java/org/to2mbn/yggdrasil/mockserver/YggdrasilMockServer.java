@@ -1,11 +1,9 @@
 package org.to2mbn.yggdrasil.mockserver;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.text.MessageFormat.format;
 import static java.util.Map.entry;
 import static java.util.Map.ofEntries;
-import static org.apache.commons.io.IOUtils.resourceToString;
-import java.io.IOException;
+import static org.to2mbn.yggdrasil.mockserver.PropertiesUtils.getSignaturePublicKey;
 import java.util.List;
 import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,8 +24,8 @@ public class YggdrasilMockServer {
 	private String serverName;
 
 	@Bean
-	public String publickeyPem() throws IOException {
-		return resourceToString("publickey.pem", UTF_8, YggdrasilMockServer.class.getClassLoader());
+	public String publickeyPem() {
+		return KeyUtils.toPEMPublicKey(getSignaturePublicKey());
 	}
 
 	@Bean
