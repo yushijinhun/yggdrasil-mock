@@ -1,38 +1,43 @@
 package org.to2mbn.yggdrasil.mockserver;
 
+import static java.lang.Math.max;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
 import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.randomUnsignedUUID;
-import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.m_access_denied;
-import static org.to2mbn.yggdrasil.mockserver.exception.YggdrasilException.newForbiddenOperationException;
 import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.to2mbn.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilCharacter;
 import org.to2mbn.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilUser;
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 
 @Component
 @ConfigurationProperties(prefix = "yggdrasil.token", ignoreUnknownFields = false)
 public class TokenStore {
 
+	private static final int MAX_TOKEN_COUNT = 100_000;
+
+	public static enum AvailableLevel {
+		COMPLETE, PARTIAL;
+	}
+
 	public class Token {
+		private long id;
 		private String clientToken;
 		private String accessToken;
 		private long createdAt;
 		private Optional<YggdrasilCharacter> boundCharacter;
 		private YggdrasilUser user;
-		private boolean revoked;
 
 		private Token() {}
 
-		public boolean isValid() {
-			if (isFullyExpired())
-				return false;
+		/** Assuming isFullyExpired() returns true */
+		private boolean isCompleteValid() {
 			if (enableTimeToPartiallyExpired && System.currentTimeMillis() > createdAt + timeToPartiallyExpired.toMillis())
 				return false;
 			if (onlyLastSessionAvailable && this != lastAcquiredToken.get(user))
@@ -40,14 +45,15 @@ public class TokenStore {
 			return true;
 		}
 
-		public boolean isRefreshable() {
-			if (isFullyExpired())
-				return false;
-			return true;
-		}
-
 		private boolean isFullyExpired() {
-			return revoked || System.currentTimeMillis() > createdAt + timeToFullyExpired.toMillis();
+			if (System.currentTimeMillis() > createdAt + timeToFullyExpired.toMillis())
+				return true;
+
+			AtomicLong latestRevoked = notBefore.get(user);
+			if (latestRevoked != null && id < latestRevoked.get())
+				return true;
+
+			return false;
 		}
 
 		public String getClientToken() {
@@ -69,17 +75,6 @@ public class TokenStore {
 		public YggdrasilUser getUser() {
 			return user;
 		}
-
-		public boolean isRevoked() {
-			return revoked;
-		}
-
-		public void revoke() {
-			if (!revoked) {
-				revoked = true;
-				removeToken(this);
-			}
-		}
 	}
 
 	private Duration timeToFullyExpired;
@@ -89,21 +84,68 @@ public class TokenStore {
 
 	private boolean onlyLastSessionAvailable;
 
-	private Map<String, Token> accessToken2token = new ConcurrentHashMap<>();
-	private Map<YggdrasilUser, Token> lastAcquiredToken = new ConcurrentHashMap<>();
+	private AtomicLong tokenIdGen = new AtomicLong();
+	private ConcurrentHashMap<YggdrasilUser, AtomicLong> notBefore = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<YggdrasilUser, Token> lastAcquiredToken = new ConcurrentHashMap<>();
+	private ConcurrentLinkedHashMap<String, Token> accessToken2token = new ConcurrentLinkedHashMap.Builder<String, Token>()
+			.maximumWeightedCapacity(MAX_TOKEN_COUNT)
+			.listener((k, v) -> lastAcquiredToken.remove(v.user, v))
+			.build();
 
 	private void removeToken(Token token) {
 		accessToken2token.remove(token.accessToken);
 		lastAcquiredToken.remove(token.user, token);
 	}
 
-	public Optional<Token> findToken(String accessToken) {
-		Token token = accessToken2token.get(accessToken);
-		if (token != null && !token.isRefreshable() && !token.isValid()) {
+	public Optional<Token> authenticate(String accessToken, @Nullable String clientToken, AvailableLevel availableLevel) {
+		Token token = accessToken2token.getQuietly(accessToken);
+		if (token == null)
+			return empty();
+
+		if (token.isFullyExpired()) {
 			removeToken(token);
 			return empty();
 		}
-		return ofNullable(token);
+
+		if (clientToken != null && !clientToken.equals(token.clientToken))
+			return empty();
+
+		switch (availableLevel) {
+			case COMPLETE:
+				if (token.isCompleteValid()) {
+					return of(token);
+				} else {
+					return empty();
+				}
+
+			case PARTIAL:
+				return of(token);
+
+			default:
+				throw new IllegalArgumentException("Unknown AvailableLevel: " + availableLevel);
+		}
+	}
+
+	/**
+	 * @param checker
+	 *            returning false will cause the method to return empty, throwing an exception is also ok
+	 */
+	public Optional<Token> authenticateAndConsume(String accessToken, @Nullable String clientToken, AvailableLevel availableLevel, Predicate<Token> checker) {
+		return authenticate(accessToken, clientToken, availableLevel)
+				.flatMap(token -> {
+					if (!checker.test(token))
+						// the operation cannot be performed
+						return empty();
+
+					if (accessToken2token.remove(accessToken) == token) {
+						// we have won the remove() race
+						lastAcquiredToken.remove(token.user, token);
+						return of(token);
+					} else {
+						// another thread won the race and consumed the token
+						return empty();
+					}
+				});
 	}
 
 	public Token acquireToken(YggdrasilUser user, @Nullable String clientToken, @Nullable YggdrasilCharacter selectedCharacter) {
@@ -117,23 +159,34 @@ public class TokenStore {
 			}
 		} else {
 			if (!user.getCharacters().contains(selectedCharacter)) {
-				throw newForbiddenOperationException(m_access_denied);
+				throw new IllegalArgumentException("the character to select doesn't belong to the user");
 			}
 			token.boundCharacter = of(selectedCharacter);
 		}
 		token.clientToken = clientToken == null ? randomUnsignedUUID() : clientToken;
 		token.createdAt = System.currentTimeMillis();
-		token.revoked = false;
 		token.user = user;
+		token.id = tokenIdGen.getAndIncrement();
+
 		accessToken2token.put(token.accessToken, token);
+		// the token we just put into `accessToken2token` may have been flush out from cache here,
+		// and the listener may be notified before the token is put into `lastAcquiredToken`
 		lastAcquiredToken.put(user, token);
+
+		if (!accessToken2token.containsKey(token.accessToken))
+			// if so, remove the token from `lastAcquiredToken`
+			lastAcquiredToken.remove(user, token);
+
 		return token;
 	}
 
 	public void revokeAll(YggdrasilUser user) {
-		accessToken2token.values().stream()
-				.filter(token -> token.user == user)
-				.forEach(Token::revoke);
+		notBefore.computeIfAbsent(user, k -> new AtomicLong())
+				.getAndUpdate(original -> max(original, tokenIdGen.get()));
+	}
+
+	public int tokensCount() {
+		return accessToken2token.size();
 	}
 
 	public Duration getTimeToPartiallyExpired() {
