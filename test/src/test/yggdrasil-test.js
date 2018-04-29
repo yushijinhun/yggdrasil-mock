@@ -1,6 +1,5 @@
 let supertest = require("supertest")("");
 let PNG = require("pngjs-nozlib").PNG;
-let streams = require("memory-streams");
 let request = require("../request");
 let ursa = require("ursa");
 let chai = require("chai");
@@ -1013,15 +1012,11 @@ describe("yggdrasil basic api", function () {
 				}
 				expect(inWhitelist, `domain ${url.hostname} is not in whitelist`).to.be.true;
 
-				let stream = new streams.WritableStream();
-
-				return new Promise(
-					resolve => supertest.get(url)
-						.expect(200)
-						.pipe(stream)
-						.on("finish", resolve))
-					.then(() => {
-						let image = PNG.sync.read(stream.toBuffer());
+				return supertest.get(url)
+					.expect(200)
+					.expect("Content-Type", "image/png")
+					.then(res => {
+						let image = PNG.sync.read(res.body);
 						let hash = computeTextureHash(image);
 
 						expect(
