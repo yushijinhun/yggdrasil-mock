@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TRAVIS_GRADLE_VERSION="4.5.1"
+TRAVIS_GRADLE_VERSION="4.7"
 APPLICATION_CONFIG='
 {
 	"server": {

@@ -1,5 +1,8 @@
 plugins {
-	id 'org.springframework.boot' version '2.0.0.RELEASE'
+	id 'org.springframework.boot' version '2.0.1.RELEASE'
+
+	// stay at 1.4.20 because of [issue-97](https://github.com/n0mer/gradle-git-properties/issues/97)
+	// update it after 1.5 is released
 	id 'com.gorylenko.gradle-git-properties' version '1.4.20'
 }
 
@@ -9,7 +12,7 @@ apply plugin: 'io.spring.dependency-management'
 group = 'org.to2mbn'
 version = '0.0.1-SNAPSHOT'
 
-sourceCompatibility = 9
+sourceCompatibility = 10
 
 repositories {
 	jcenter()
