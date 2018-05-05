@@ -29,11 +29,16 @@ log(){
 }
 
 set -em
-cd server
+pushd server
 if [[ "$1" == "--travis-ci" ]];then
 	log "Running on travis-ci"
 	log "Creating gradle wrapper $TRAVIS_GRADLE_VERSION"
+	mkdir -p .gradle-wrapper
+	pushd .gradle-wrapper
 	TERM=dumb gradle wrapper --gradle-version $TRAVIS_GRADLE_VERSION
+	popd
+	cp -r .gradle-wrapper/* ./
+	rm -r .gradle-wrapper
 	log "Installing OpenJDK $TRAVIS_OPENJDK_VERSION"
 	wget https://github.com/sormuras/bach/raw/master/install-jdk.sh
 	. ./install-jdk.sh -f $TRAVIS_OPENJDK_VERSION -l GPL -c
@@ -43,7 +48,8 @@ else
 	log "Building yggdrasil server"
 	gradle clean bootJar
 fi
-cd ../test
+popd
+pushd test
 log "Initialize npm"
 npm install .
 log "npm test"

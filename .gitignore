@@ -111,3 +111,5 @@ typings/
 
 # dotenv environment variables file
 .env
+
+install-jdk.sh
