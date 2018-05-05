@@ -1,6 +1,6 @@
-let NodeRSA = require("node-rsa");
-let chai = require("chai");
-let expect = chai.expect;
+const NodeRSA = require("node-rsa");
+const chai = require("chai");
+const expect = chai.expect;
 
 chai.Assertion.addProperty("uuid", function () {
 	this.assert(

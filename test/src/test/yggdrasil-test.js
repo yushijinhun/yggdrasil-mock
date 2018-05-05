@@ -1,13 +1,13 @@
-let supertest = require("supertest")("");
-let PNG = require("pngjs-nozlib").PNG;
-let request = require("../request");
-let NodeRSA = require("node-rsa");
-let chai = require("chai");
-let expect = chai.expect;
-let YggdrasilVerifier = require("../yggdrasil-verify");
-let config = require("../../yggdrasil-config");
-let crypto = require("crypto");
-let computeTextureHash = require("../texture-hash");
+const supertest = require("supertest")("");
+const PNG = require("pngjs-nozlib").PNG;
+const request = require("../request");
+const NodeRSA = require("node-rsa");
+const chai = require("chai");
+const expect = chai.expect;
+const YggdrasilVerifier = require("../yggdrasil-verify");
+const config = require("../../yggdrasil-config");
+const crypto = require("crypto");
+const computeTextureHash = require("../texture-hash");
 const { URL } = require("url");
 
 const slowTime = 300; // ms
@@ -20,9 +20,9 @@ const nonexistentUser = "notExists@to2mbn.org";
 const nonexistentUserPassword = "123456";
 const incorrectPassword = "incorrectPassword-_-";
 
-let delay = (time) => (result) => new Promise(resolve => setTimeout(() => resolve(result), time));
+const delay = (time) => (result) => new Promise(resolve => setTimeout(() => resolve(result), time));
 
-let agent = {
+const agent = {
 	"name": "Minecraft",
 	"version": 1
 };

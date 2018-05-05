@@ -1,4 +1,4 @@
-let crypto = require("crypto");
+const crypto = require("crypto");
 
 function computeTextureHash(image) {
 	const bufSize = 8192;
