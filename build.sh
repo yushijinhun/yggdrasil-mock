@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TRAVIS_GRADLE_VERSION="4.7"
+TRAVIS_OPENJDK_VERSION="10"
 APPLICATION_CONFIG='
 {
 	"server": {
@@ -33,6 +34,9 @@ if [[ "$1" == "--travis-ci" ]];then
 	log "Running on travis-ci"
 	log "Creating gradle wrapper $TRAVIS_GRADLE_VERSION"
 	TERM=dumb gradle wrapper --gradle-version $TRAVIS_GRADLE_VERSION
+	log "Installing OpenJDK $TRAVIS_OPENJDK_VERSION"
+	wget https://github.com/sormuras/bach/raw/master/install-jdk.sh
+	. ./install-jdk.sh -f $TRAVIS_OPENJDK_VERSION -l GPL -c
 	log "Building yggdrasil server"
 	TERM=dumb ./gradlew clean bootJar
 else
