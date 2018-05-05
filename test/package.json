@@ -19,8 +19,8 @@
 	"dependencies": {
 		"chai": "^4.1.2",
 		"mocha": "^4.0.1",
+		"node-rsa": "^0.4.2",
 		"pngjs-nozlib": "^1.0.0",
-		"supertest": "^3.0.0",
-		"ursa": "^0.9.4"
+		"supertest": "^3.0.0"
 	}
 }

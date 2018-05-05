@@ -1,7 +1,7 @@
 let supertest = require("supertest")("");
 let PNG = require("pngjs-nozlib").PNG;
 let request = require("../request");
-let ursa = require("ursa");
+let NodeRSA = require("node-rsa");
 let chai = require("chai");
 let expect = chai.expect;
 let YggdrasilVerifier = require("../yggdrasil-verify");
@@ -58,10 +58,10 @@ describe("yggdrasil extension api", function () {
 	});
 
 	describe("should have valid public key", function () {
-		let publicKey;
-		before(() => publicKey = ursa.createPublicKey(Buffer(response.signaturePublickey)));
+		let publicKey = new NodeRSA();
+		before(() => publicKey.importKey(response.signaturePublickey, "pkcs8-public-pem"));
 		it("should be at least 4096 bits long", () =>
-			expect(publicKey.getModulus().length >= 512));
+			expect(publicKey.getKeySize() >= 4096));
 	});
 
 	it("should have specified metadata", () =>

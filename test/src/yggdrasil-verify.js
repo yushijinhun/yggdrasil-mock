@@ -1,4 +1,4 @@
-let ursa = require("ursa");
+let NodeRSA = require("node-rsa");
 let chai = require("chai");
 let expect = chai.expect;
 
@@ -23,7 +23,14 @@ class YggdrasilVerifier {
 		expect(meta).to.be.an("object");
 		expect(meta.signaturePublickey).to.be.a("string");
 		expect(meta.skinDomains).to.be.an("array");
-		this.publicKey = ursa.createPublicKey(Buffer(meta.signaturePublickey));
+		this.publicKey = new NodeRSA();
+		this.publicKey.importKey(meta.signaturePublickey, "pkcs8-public-pem");
+		this.publicKey.setOptions({
+			signingScheme: {
+				scheme: "pkcs1",
+				hash: "sha1"
+			}
+		});
 		this.skinDomains = meta.skinDomains;
 	}
 
@@ -53,9 +60,9 @@ class YggdrasilVerifier {
 	}
 
 	verifySignature(value, signature) {
-		if (!this.publicKey.hashAndVerify("sha1",
-			Buffer(value, "utf-8"),
-			Buffer(signature, "base64"))) {
+		if (!this.publicKey.verify(
+			Buffer.from(value, "utf-8"),
+			Buffer.from(signature, "base64"))) {
 			throw "Invalid signature";
 		}
 	}
@@ -142,7 +149,7 @@ class YggdrasilVerifier {
 			throw "No 'textures' proeprty found";
 		}
 
-		let payload = JSON.parse(new Buffer(textureValue, "base64").toString("utf8"));
+		let payload = JSON.parse(Buffer.from(textureValue, "base64").toString("utf8"));
 		expect(payload).to.be.an("object");
 		expect(payload.timestamp).to.be.a("number");
 		expect(payload.profileId).to.equal(character.id);
