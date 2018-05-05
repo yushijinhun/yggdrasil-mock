@@ -31,11 +31,8 @@ set -em
 cd server
 if [[ "$1" == "--travis-ci" ]];then
 	log "Running on travis-ci"
-	source /opt/jdk_switcher/jdk_switcher.sh
-	jdk_switcher use oraclejdk8
 	log "Creating gradle wrapper $TRAVIS_GRADLE_VERSION"
 	TERM=dumb gradle wrapper --gradle-version $TRAVIS_GRADLE_VERSION
-	jdk_switcher use oraclejdk9
 	log "Building yggdrasil server"
 	TERM=dumb ./gradlew clean bootJar
 else
