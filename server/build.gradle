@@ -1,13 +1,19 @@
-plugins {
-	id 'org.springframework.boot' version '2.0.1.RELEASE'
-
-	// stay at 1.4.20 because of [issue-97](https://github.com/n0mer/gradle-git-properties/issues/97)
-	// update it after 1.5 is released
-	id 'com.gorylenko.gradle-git-properties' version '1.4.20'
+buildscript {
+	repositories {
+		maven { url 'https://jitpack.io' }
+		maven { url 'https://plugins.gradle.org/m2/' }
+	}
+	dependencies {
+		classpath 'com.github.n0mer:gradle-git-properties:c22b4de5b1'
+		classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.0.1.RELEASE'
+	}
 }
 
+
 apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
+apply plugin: 'com.gorylenko.gradle-git-properties'
 
 group = 'org.to2mbn'
 version = '0.0.1-SNAPSHOT'
@@ -34,7 +40,7 @@ bootJar {
 }
 
 gitProperties {
-	gitRepositoryRoot = new File("${project.rootDir}/..")
+	dotGitDirectory = "${project.rootDir}/../.git"
 }
 
 springBoot {
