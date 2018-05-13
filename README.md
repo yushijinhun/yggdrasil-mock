@@ -3,6 +3,7 @@
 [![license](https://img.shields.io/github/license/to2mbn/yggdrasil-mock.svg?style=flat-square)](https://github.com/to2mbn/yggdrasil-mock/blob/master/LICENSE)
 ![languages](https://img.shields.io/badge/languages-javascript,_java-yellow.svg?style=flat-square)
 ![require java 10+](https://img.shields.io/badge/require_java-10+-orange.svg?style=flat-square)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fto2mbn%2Fyggdrasil-mock.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fto2mbn%2Fyggdrasil-mock?ref=badge_shield)
 
 Yggdrasil API测试样例，和一个简易的Yggdrasil服务端。
 
@@ -30,3 +31,7 @@ gradle
 构建输出位于`server/build/libs/`下。JAR可以直接运行。
 
 第一次运行会在当前目录下释放配置文件`application.yaml`，你可以编辑其中设置。
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fto2mbn%2Fyggdrasil-mock.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fto2mbn%2Fyggdrasil-mock?ref=badge_large)
