@@ -210,7 +210,8 @@ public class Router {
 					return true;
 				});
 
-		Token newToken = tokenStore.acquireToken(oldToken.getUser(), oldToken.getClientToken(), characterToSelect);
+		Token newToken = tokenStore.acquireToken(oldToken.getUser(), oldToken.getClientToken(),
+				characterToSelect == null ? oldToken.getBoundCharacter().orElse(null) : characterToSelect);
 
 		Map<String, Object> response = new LinkedHashMap<>();
 		response.put("accessToken", newToken.getAccessToken());

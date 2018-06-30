@@ -305,7 +305,7 @@ describe("yggdrasil basic api", function () {
 	}
 
 	describe("refresh", function () {
-		function verifyUser1or3RefreshResponse(response, authResponse) {
+		function verifyRefreshResponseWithoutSelectedProfile(response, authResponse) {
 			verify.verifyRefreshResponse(response, authResponse);
 			expect(response.selectedProfile).to.not.exist;
 			expect(response.user).to.not.exist;
@@ -340,7 +340,7 @@ describe("yggdrasil basic api", function () {
 						clientToken: authResponse.clientToken
 					})
 					.expect(200)
-					.expect(res => verifyUser1or3RefreshResponse(res.body, authResponse))));
+					.expect(res => verifyRefreshResponseWithoutSelectedProfile(res.body, authResponse))));
 
 		this.slow(slowTime + config.rateLimits.login);
 		it("user1 with requestUser=true",
@@ -366,7 +366,7 @@ describe("yggdrasil basic api", function () {
 						accessToken: authResponse.accessToken
 					})
 					.expect(200)
-					.expect(res => verifyUser1or3RefreshResponse(res.body, authResponse))
+					.expect(res => verifyRefreshResponseWithoutSelectedProfile(res.body, authResponse))
 					.then(() => request.post("/authserver/refresh")
 						.send({
 							accessToken: authResponse.accessToken
@@ -382,14 +382,14 @@ describe("yggdrasil basic api", function () {
 						accessToken: authResponse.accessToken
 					})
 					.expect(200)
-					.expect(res => verifyUser1or3RefreshResponse(res.body, authResponse))
+					.expect(res => verifyRefreshResponseWithoutSelectedProfile(res.body, authResponse))
 					.then(res => res.body))
 				.then(lastResponse => request.post("/authserver/refresh")
 					.send({
 						accessToken: lastResponse.accessToken
 					})
 					.expect(200)
-					.expect(res => verifyUser1or3RefreshResponse(res.body, lastResponse))));
+					.expect(res => verifyRefreshResponseWithoutSelectedProfile(res.body, lastResponse))));
 
 		this.slow(slowTime + config.rateLimits.login);
 		it("user2",
@@ -429,6 +429,23 @@ describe("yggdrasil basic api", function () {
 				.then(authResponse => selectProfile(u3character2, authResponse.availableProfiles, authResponse)));
 
 		this.slow(slowTime + config.rateLimits.login);
+		it("after selecting profile",
+			() => authenticateUser3()
+				.then(authResponse => selectProfile(u3character2, authResponse.availableProfiles, authResponse))
+				.then(lastResponse => request.post("/authserver/refresh")
+					.send({
+						accessToken: lastResponse.accessToken
+					})
+					.expect(200)
+					.expect(res => {
+						let response = res.body;
+						verify.verifyRefreshResponse(response, lastResponse);
+						expect(response.selectedProfile).to.exist;
+						expect(response.selectedProfile.id).to.equal(lastResponse.selectedProfile.id);
+						expect(response.selectedProfile.name).to.equal(u3character2);
+					})));
+
+		this.slow(slowTime + config.rateLimits.login);
 		it("select nonexistent profile (expecting old token to be still valid)",
 			() => authenticateUser3()
 				.then(authResponse => request.post("/authserver/refresh")
@@ -446,7 +463,7 @@ describe("yggdrasil basic api", function () {
 							accessToken: authResponse.accessToken
 						})
 						.expect(200)
-						.expect(res => verifyUser1or3RefreshResponse(res.body, authResponse)))));
+						.expect(res => verifyRefreshResponseWithoutSelectedProfile(res.body, authResponse)))));
 
 		this.slow(slowTime + 2 * config.rateLimits.login);
 		it("select another user's profile (expecting old token to be still valid)",
@@ -465,7 +482,7 @@ describe("yggdrasil basic api", function () {
 								accessToken: authResponse.accessToken
 							})
 							.expect(200)
-							.expect(res => verifyUser1or3RefreshResponse(res.body, authResponse))))));
+							.expect(res => verifyRefreshResponseWithoutSelectedProfile(res.body, authResponse))))));
 
 		this.slow(slowTime + config.rateLimits.login);
 		it("select profile with an already-bound token (expecting to fail)",
