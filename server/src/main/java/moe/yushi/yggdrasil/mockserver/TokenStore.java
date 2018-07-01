@@ -1,9 +1,9 @@
-package org.to2mbn.yggdrasil.mockserver;
+package moe.yushi.yggdrasil.mockserver;
 
 import static java.lang.Math.max;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
-import static org.to2mbn.yggdrasil.mockserver.UUIDUtils.randomUnsignedUUID;
+import static moe.yushi.yggdrasil.mockserver.UUIDUtils.randomUnsignedUUID;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,9 +12,9 @@ import java.util.function.Predicate;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
-import org.to2mbn.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilCharacter;
-import org.to2mbn.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilUser;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import moe.yushi.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilCharacter;
+import moe.yushi.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilUser;
 
 @Component
 @ConfigurationProperties(prefix = "yggdrasil.token", ignoreUnknownFields = false)

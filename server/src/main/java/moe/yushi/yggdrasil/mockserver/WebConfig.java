@@ -1,4 +1,4 @@
-package org.to2mbn.yggdrasil.mockserver;
+package moe.yushi.yggdrasil.mockserver;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.config.CorsRegistry;

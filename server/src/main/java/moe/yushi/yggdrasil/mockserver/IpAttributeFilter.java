@@ -1,4 +1,4 @@
-package org.to2mbn.yggdrasil.mockserver;
+package moe.yushi.yggdrasil.mockserver;
 
 import java.net.InetSocketAddress;
 import org.springframework.stereotype.Component;

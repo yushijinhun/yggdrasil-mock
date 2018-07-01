@@ -1,4 +1,4 @@
-package org.to2mbn.yggdrasil.mockserver;
+package moe.yushi.yggdrasil.mockserver;
 
 import static java.util.Optional.empty;
 import java.time.Duration;
@@ -6,9 +6,9 @@ import java.util.Optional;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
-import org.to2mbn.yggdrasil.mockserver.TokenStore.Token;
-import org.to2mbn.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilCharacter;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import moe.yushi.yggdrasil.mockserver.TokenStore.Token;
+import moe.yushi.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilCharacter;
 
 @Component
 @ConfigurationProperties(prefix = "yggdrasil.session", ignoreUnknownFields = false)

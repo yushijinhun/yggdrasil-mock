@@ -1,4 +1,4 @@
-package org.to2mbn.yggdrasil.mockserver;
+package moe.yushi.yggdrasil.mockserver;
 
 import static java.text.MessageFormat.format;
 import java.io.FileNotFoundException;

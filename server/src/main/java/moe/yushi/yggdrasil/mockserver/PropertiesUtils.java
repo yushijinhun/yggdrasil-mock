@@ -1,4 +1,4 @@
-package org.to2mbn.yggdrasil.mockserver;
+package moe.yushi.yggdrasil.mockserver;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Map.ofEntries;

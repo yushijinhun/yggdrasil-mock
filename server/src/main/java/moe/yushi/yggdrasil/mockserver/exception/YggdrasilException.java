@@ -1,4 +1,4 @@
-package org.to2mbn.yggdrasil.mockserver.exception;
+package moe.yushi.yggdrasil.mockserver.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;

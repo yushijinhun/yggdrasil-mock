@@ -8,7 +8,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'com.gorylenko.gradle-git-properties'
 
-group = 'org.to2mbn'
+group = 'moe.yushi'
 version = '0.0.1-SNAPSHOT'
 
 sourceCompatibility = 10
