@@ -4,7 +4,7 @@
 	"description": "Yggdrasil API integration test",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/to2mbn/yggdrasil-mock.git"
+		"url": "git+https://github.com/yushijinhun/yggdrasil-mock.git"
 	},
 	"scripts": {
 		"integration-test": "./integration-test.sh",
