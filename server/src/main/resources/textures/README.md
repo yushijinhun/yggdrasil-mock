@@ -11,9 +11,9 @@ Metadata of textures:
 
 |File|Type|HD?|
 |----|----|---|
-|`eromanga/sagiri_lzumi.png`  |Skin, 1.8+, Alex |No |
-|`eromanga/masamune_lzumi.png`|Skin, 1.8+, Steve|No |
 |`eromanga/elf_yamada.png`    |Skin, 1.8+, Alex |No |
+|`eromanga/masamune_lzumi.png`|Skin, 1.8+, Steve|No |
+|`eromanga/megumi_jinno.png`  |Skin, 1.8+, Alex |No |
 |`eromanga/muramasa_senju.png`|Skin, 1.8+, Alex |No |
-|`eromanga/tomoe_takasago.png`|Skin, 1.8+, Alex |No |
+|`eromanga/sagiri_lzumi.png`  |Skin, 1.8+, Alex |No |
 |`eromanga/tomoe_takasago.png`|Skin, 1.8+, Alex |No |
