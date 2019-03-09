@@ -2,6 +2,7 @@ package moe.yushi.yggdrasil.mockserver;
 
 import static java.util.Map.entry;
 import static java.util.Map.ofEntries;
+import static java.util.Optional.of;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.stream.Collectors.toList;
 import static moe.yushi.yggdrasil.mockserver.UUIDUtils.randomUnsignedUUID;
@@ -10,168 +11,79 @@ import static moe.yushi.yggdrasil.mockserver.UUIDUtils.unsign;
 import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.m_access_denied;
 import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.m_invalid_credentials;
 import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.m_invalid_token;
-import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.m_no_credentials;
 import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.m_profile_not_found;
 import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.m_token_already_assigned;
 import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.newForbiddenOperationException;
 import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.newIllegalArgumentException;
 import static org.springframework.http.CacheControl.maxAge;
-import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.MediaType.IMAGE_PNG;
-import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
-import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
-import static org.springframework.web.reactive.function.server.RouterFunctions.route;
-import static org.springframework.web.reactive.function.server.ServerResponse.noContent;
-import static org.springframework.web.reactive.function.server.ServerResponse.notFound;
-import static org.springframework.web.reactive.function.server.ServerResponse.ok;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
+import static org.springframework.http.ResponseEntity.noContent;
+import static org.springframework.http.ResponseEntity.notFound;
+import static org.springframework.http.ResponseEntity.ok;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import javax.validation.Valid;
+import javax.validation.ValidationException;
+import javax.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.lang.Nullable;
-import org.springframework.web.reactive.function.server.RouterFunction;
-import org.springframework.web.reactive.function.server.ServerRequest;
-import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import moe.yushi.yggdrasil.mockserver.TokenStore.AvailableLevel;
 import moe.yushi.yggdrasil.mockserver.TokenStore.Token;
 import moe.yushi.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilCharacter;
 import moe.yushi.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilUser;
-import reactor.core.publisher.Mono;
 
-@Configuration
+@Validated
+@RestController
 public class Router {
 
-	@Autowired
-	private ServerMeta meta;
+	private @Autowired ServerMeta meta;
+	private @Autowired RateLimiter rateLimiter;
+	private @Autowired YggdrasilDatabase database;
+	private @Autowired TokenStore tokenStore;
+	private @Autowired SessionAuthenticator sessionAuth;
 
-	@Autowired
-	private RateLimiter rateLimiter;
-
-	@Autowired
-	private YggdrasilDatabase database;
-
-	@Autowired
-	private TokenStore tokenStore;
-
-	@Autowired
-	private SessionAuthenticator sessionAuth;
-
-	private static final Mono<ServerResponse> ON_EMPTY_REQUEST = Mono.defer(() -> {
-		throw newIllegalArgumentException("empty request");
-	});
-
-	@Bean
-	public RouterFunction<ServerResponse> rootRouter() {
-		return route(GET("/"),
-				req -> ok()
-						.contentType(APPLICATION_JSON_UTF8)
-						.syncBody(meta));
+	@GetMapping("/")
+	public ServerMeta root() {
+		return meta;
 	}
 
-	@Bean
-	public RouterFunction<ServerResponse> statusRouter() {
-		// @formatter:off
-		return route(GET("/status"),
-				req -> ok()
-						.contentType(APPLICATION_JSON_UTF8)
-						.syncBody(
-							ofEntries(
-								entry("user.count", database.getUsers().size()),
-								entry("token.count", tokenStore.tokensCount()),
-								entry("pendingAuthentication.count", sessionAuth.pendingAuthenticationsCount())
-							)
-						));
-		// @formatter:on
+	@GetMapping("/status")
+	public Map<?, ?> status() {
+		return ofEntries(
+				entry("user.count", database.getUsers().size()),
+				entry("token.count", tokenStore.tokensCount()),
+				entry("pendingAuthentication.count", sessionAuth.pendingAuthenticationsCount()));
 	}
 
-	@Bean
-	public RouterFunction<ServerResponse> authRouter() {
-		return
-		// @formatter:off
-			route(POST("/authserver/authenticate"),
-					request -> request.bodyToMono(LoginRequest.class)
-							.flatMap(this::processLogin)
-							.switchIfEmpty(ON_EMPTY_REQUEST))
-
-			.andRoute(POST("/authserver/refresh"),
-					request -> request.bodyToMono(RefreshRequest.class)
-							.flatMap(this::processRefresh)
-							.switchIfEmpty(ON_EMPTY_REQUEST))
-
-			.andRoute(POST("/authserver/validate"),
-					request -> request.bodyToMono(ValidateRequest.class)
-						.flatMap(this::processValidate)
-						.switchIfEmpty(ON_EMPTY_REQUEST))
-
-			.andRoute(POST("/authserver/invalidate"),
-					request -> request.bodyToMono(InvalidateRequest.class)
-							.flatMap(this::processInvalidate)
-							.switchIfEmpty(ON_EMPTY_REQUEST))
-
-			.andRoute(POST("/authserver/signout"),
-					request -> request.bodyToMono(SignoutRequest.class)
-							.flatMap(this::processSignout)
-							.switchIfEmpty(ON_EMPTY_REQUEST));
-		// @formatter:on
-	}
-
-	@Bean
-	public RouterFunction<ServerResponse> profileRouter() {
-		return
-		// @formatter:off
-			route(POST("/api/profiles/minecraft"),
-					request -> request.bodyToMono(String[].class)
-							.flatMap(this::processQueryProfiles)
-							.switchIfEmpty(ON_EMPTY_REQUEST))
-
-			.andRoute(GET("/sessionserver/session/minecraft/profile/{uuid:[a-f0-9]{32}}"),
-					request -> processGetProfile(
-							toUUID(request.pathVariable("uuid")),
-							request.queryParam("unsigned").orElse("true")
-									.equals("false")));
-		// @formatter:on
-	}
-
-	@Bean
-	public RouterFunction<ServerResponse> sessionRouter() {
-		return
-		// @formatter:off
-			route(POST("/sessionserver/session/minecraft/join"),
-					request -> request.bodyToMono(JoinServerRequest.class)
-							.flatMap(req -> processJoinServer(req, getRemoteAddr(request)))
-							.switchIfEmpty(ON_EMPTY_REQUEST))
-
-			.andRoute(GET("/sessionserver/session/minecraft/hasJoined"),
-					request -> processHasJoinedServer(
-							request.queryParam("serverId"),
-							request.queryParam("username"),
-							request.queryParam("ip")));
-		// @formatter:on
-	}
-
-	@Bean
-	public RouterFunction<ServerResponse> textureRouter() {
-		return route(GET("/textures/{hash:[a-f0-9]{64}}"),
-				request -> processGetTexture(request.pathVariable("hash")));
-	}
-
-	private Mono<ServerResponse> processLogin(LoginRequest req) {
-		YggdrasilUser user = passwordAuthenticated(req.username, req.password);
+	@PostMapping("/authserver/authenticate")
+	public Map<?, ?> authenticate(@RequestBody @Valid LoginRequest req) {
+		var user = passwordAuthenticated(req.username, req.password);
 
 		if (req.clientToken == null)
 			req.clientToken = randomUnsignedUUID();
 
-		Token token = tokenStore.acquireToken(user, req.clientToken, null);
+		var token = tokenStore.acquireToken(user, req.clientToken, null);
 
-		Map<String, Object> response = new LinkedHashMap<>();
+		var response = new LinkedHashMap<>();
 		response.put("accessToken", token.getAccessToken());
 		response.put("clientToken", token.getClientToken());
 		response.put("availableProfiles",
@@ -184,21 +96,19 @@ public class Router {
 		if (req.requestUser)
 			response.put("user", user.toResponse());
 
-		return ok()
-				.contentType(APPLICATION_JSON_UTF8)
-				.syncBody(response);
+		return response;
 	}
 
-	private Mono<ServerResponse> processRefresh(RefreshRequest req) {
-		YggdrasilCharacter characterToSelect =
-				req.selectedProfile == null ? null
-						: database.findCharacterByUUID(toUUID(req.selectedProfile.id))
-								.orElseThrow(() -> newIllegalArgumentException(m_profile_not_found));
+	@PostMapping("/authserver/refresh")
+	public Map<?, ?> refresh(@RequestBody @Valid RefreshRequest req) {
+		var characterToSelect = req.selectedProfile == null ? null
+				: database.findCharacterByUUID(toUUID(req.selectedProfile.id))
+						.orElseThrow(() -> newIllegalArgumentException(m_profile_not_found));
 
 		if (characterToSelect != null && !characterToSelect.getName().equals(req.selectedProfile.name))
 			throw newIllegalArgumentException(m_profile_not_found);
 
-		Token oldToken = authenticateAndConsume(req.accessToken, req.clientToken, AvailableLevel.PARTIAL,
+		var oldToken = authenticateAndConsume(req.accessToken, req.clientToken, AvailableLevel.PARTIAL,
 				token -> {
 					if (characterToSelect != null) {
 						if (token.getBoundCharacter().isPresent())
@@ -210,10 +120,10 @@ public class Router {
 					return true;
 				});
 
-		Token newToken = tokenStore.acquireToken(oldToken.getUser(), oldToken.getClientToken(),
+		var newToken = tokenStore.acquireToken(oldToken.getUser(), oldToken.getClientToken(),
 				characterToSelect == null ? oldToken.getBoundCharacter().orElse(null) : characterToSelect);
 
-		Map<String, Object> response = new LinkedHashMap<>();
+		var response = new LinkedHashMap<>();
 		response.put("accessToken", newToken.getAccessToken());
 		response.put("clientToken", newToken.getClientToken());
 		newToken.getBoundCharacter().ifPresent(
@@ -222,145 +132,119 @@ public class Router {
 		if (req.requestUser)
 			response.put("user", newToken.getUser().toResponse());
 
-		return ok()
-				.contentType(APPLICATION_JSON_UTF8)
-				.syncBody(response);
+		return response;
 	}
 
-	private Mono<ServerResponse> processValidate(ValidateRequest req) {
+	@PostMapping("/authserver/validate")
+	@ResponseStatus(NO_CONTENT)
+	public void validate(@RequestBody @Valid ValidateRequest req) {
 		authenticate(req.accessToken, req.clientToken, AvailableLevel.COMPLETE);
-		return noContent().build();
 	}
 
-	private Mono<ServerResponse> processInvalidate(InvalidateRequest req) {
-		if (req.accessToken == null)
-			throw newIllegalArgumentException(m_no_credentials);
-
+	@PostMapping("/authserver/invalidate")
+	@ResponseStatus(NO_CONTENT)
+	public void invalidate(@RequestBody @Valid InvalidateRequest req) {
 		tokenStore.authenticateAndConsume(req.accessToken, null, AvailableLevel.PARTIAL, dummy -> true);
-		return noContent().build();
 	}
 
-	private Mono<ServerResponse> processSignout(SignoutRequest req) {
-		YggdrasilUser user = passwordAuthenticated(req.username, req.password);
+	@PostMapping("/authserver/signout")
+	@ResponseStatus(NO_CONTENT)
+	public void signout(@RequestBody @Valid SignoutRequest req) {
+		var user = passwordAuthenticated(req.username, req.password);
 		tokenStore.revokeAll(user);
-		return noContent().build();
 	}
 
-	private Mono<ServerResponse> processJoinServer(JoinServerRequest req, Optional<String> ipAddr) {
-		if (req.serverId == null)
-			throw newIllegalArgumentException("serverId is null");
-		if (req.selectedProfile == null)
-			throw newIllegalArgumentException("selectedProfile is null");
-
-		Token token = authenticate(req.accessToken, null, AvailableLevel.COMPLETE);
-		if (token.getBoundCharacter().isPresent()
-				&& unsign(token.getBoundCharacter().get().getUuid()).equals(req.selectedProfile)) {
-			sessionAuth.joinServer(token, req.serverId, ipAddr.orElse(null));
-			return noContent().build();
+	@PostMapping("/sessionserver/session/minecraft/join")
+	@ResponseStatus(NO_CONTENT)
+	public void joinServer(@RequestBody @Valid JoinServerRequest req, ServerHttpRequest http) {
+		var token = authenticate(req.accessToken, null, AvailableLevel.COMPLETE);
+		if (token.getBoundCharacter().isPresent() &&
+				unsign(token.getBoundCharacter().get().getUuid()).equals(req.selectedProfile)) {
+			var ip = of(http.getRemoteAddress())
+					.map(addr -> addr.getAddress().getHostAddress());
+			sessionAuth.joinServer(token, req.serverId, ip);
 		} else {
-			throw newForbiddenOperationException("invalid profile");
+			throw newForbiddenOperationException("Invalid profile.");
 		}
 	}
 
-	private Mono<ServerResponse> processHasJoinedServer(Optional<String> serverId, Optional<String> username, Optional<String> ip) {
-		if (serverId.isPresent() && username.isPresent()) {
-			Optional<YggdrasilCharacter> character = sessionAuth.verifyUser(username.get(), serverId.get(), ip.orElse(null));
-			if (character.isPresent()) {
-				return ok()
-						.contentType(APPLICATION_JSON_UTF8)
-						.syncBody(character.get().toCompleteResponse(true));
-			}
-		}
-		return noContent().build();
+	@GetMapping("/sessionserver/session/minecraft/hasJoined")
+	public ResponseEntity<?> hasJoinedServer(@RequestParam String serverId, @RequestParam String username, @RequestParam Optional<String> ip) {
+		return sessionAuth.verifyUser(username, serverId, ip)
+				.map(character -> ok(character.toCompleteResponse(true)))
+				.orElse(noContent().build());
 	}
 
-	private Mono<ServerResponse> processQueryProfiles(String[] req) {
-		return ok()
-				.contentType(APPLICATION_JSON_UTF8)
-				.syncBody(
-						Stream.of(req)
-								.distinct()
-								.map(database::findCharacterByName)
-								.flatMap(Optional::stream)
-								.map(YggdrasilCharacter::toSimpleResponse)
-								.collect(toList()));
+	@PostMapping("/api/profiles/minecraft")
+	public Stream<Map<?, ?>> queryProfiles(@RequestBody List<String> names) {
+		return names.stream()
+				.distinct()
+				.map(database::findCharacterByName)
+				.flatMap(Optional::stream)
+				.map(YggdrasilCharacter::toSimpleResponse);
 	}
 
-	private Mono<ServerResponse> processGetProfile(UUID uuid, boolean signed) {
-		return database.findCharacterByUUID(uuid)
-				.map(character -> character.toCompleteResponse(signed))
-				.map(response -> ok()
-						.contentType(APPLICATION_JSON_UTF8)
-						.syncBody(response))
-				.orElseGet(() -> noContent().build());
+	@GetMapping("/sessionserver/session/minecraft/profile/{uuid:[a-f0-9]{32}}")
+	public ResponseEntity<?> profile(@PathVariable String uuid, @RequestParam(required = false) String unsigned) {
+		var signed = "false".equals(unsigned);
+		return database.findCharacterByUUID(toUUID(uuid))
+				.map(character -> ok(character.toCompleteResponse(signed)))
+				.orElse(noContent().build());
 	}
 
-	private Mono<ServerResponse> processGetTexture(String hash) {
+	@GetMapping("/textures/{hash:[a-f0-9]{64}}")
+	public ResponseEntity<?> texture(@PathVariable String hash) {
 		return database.findTextureByHash(hash)
 				.map(texture -> ok()
 						.contentType(IMAGE_PNG)
-						.contentLength(texture.getData().length)
 						.eTag(texture.getHash())
 						.cacheControl(maxAge(30, DAYS).cachePublic())
-						.syncBody(texture.getData()))
-				.orElseGet(() -> notFound().build());
+						.body(texture.getData()))
+				.orElse(notFound().build());
+	}
+
+	@ExceptionHandler(ValidationException.class)
+	public void onMalformedRequest(ValidationException e) {
+		throw new ResponseStatusException(HttpStatus.BAD_REQUEST, null, e);
 	}
 
 	// ---- Helper methods ----
-	private Optional<String> getRemoteAddr(ServerRequest request) {
-		return request.attribute(IpAttributeFilter.ATTR_REMOTE_ADDR)
-				.map(InetSocketAddress.class::cast)
-				.map(InetSocketAddress::getAddress)
-				.map(InetAddress::getHostAddress);
-	}
+	private YggdrasilUser passwordAuthenticated(String username, String password) {
+		var user = database.findUserByEmail(username)
+				.orElseThrow(() -> newForbiddenOperationException(m_invalid_credentials));
 
-	private void rateLimit(YggdrasilUser user) {
-		if (!rateLimiter.tryAccess(user)) {
+		if (!rateLimiter.tryAccess(user))
 			throw newForbiddenOperationException(m_invalid_credentials);
-		}
-	}
 
-	private YggdrasilUser passwordAuthenticated(@Nullable String username, @Nullable String password) {
-		if (username == null || password == null)
-			throw newIllegalArgumentException(m_no_credentials);
-
-		YggdrasilUser user = database.findUserByEmail(username).orElseThrow(() -> newForbiddenOperationException(m_invalid_credentials));
-		rateLimit(user);
 		if (!password.equals(user.getPassword()))
 			throw newForbiddenOperationException(m_invalid_credentials);
+
 		return user;
 	}
 
-	private Token authenticate(@Nullable String accessToken, @Nullable String clientToken, AvailableLevel availableLevel) {
-		if (accessToken == null)
-			throw newIllegalArgumentException(m_no_credentials);
-
+	private Token authenticate(String accessToken, @Nullable String clientToken, AvailableLevel availableLevel) {
 		return tokenStore.authenticate(accessToken, clientToken, availableLevel)
 				.orElseThrow(() -> newForbiddenOperationException(m_invalid_token));
 	}
 
-	private Token authenticateAndConsume(@Nullable String accessToken, @Nullable String clientToken, AvailableLevel availableLevel, Predicate<Token> checker) {
-		if (accessToken == null)
-			throw newIllegalArgumentException(m_no_credentials);
-
+	private Token authenticateAndConsume(String accessToken, @Nullable String clientToken, AvailableLevel availableLevel, Predicate<Token> checker) {
 		return tokenStore.authenticateAndConsume(accessToken, clientToken, availableLevel, checker)
 				.orElseThrow(() -> newForbiddenOperationException(m_invalid_token));
 	}
-
 	// --------
 
 	// ---- Requests ----
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class LoginRequest {
-		public String username;
-		public String password;
+		public @NotBlank String username;
+		public @NotBlank String password;
 		public String clientToken;
 		public boolean requestUser = false;
 	}
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class RefreshRequest {
-		public String accessToken;
+		public @NotBlank String accessToken;
 		public String clientToken;
 		public boolean requestUser = false;
 		public ProfileBody selectedProfile;
@@ -368,33 +252,32 @@ public class Router {
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class ProfileBody {
-		public String id;
-		public String name;
+		public @NotBlank String id;
+		public @NotBlank String name;
 	}
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class ValidateRequest {
-		public String accessToken;
+		public @NotBlank String accessToken;
 		public String clientToken;
 	}
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class InvalidateRequest {
-		public String accessToken;
-		public String clientToken;
+		public @NotBlank String accessToken;
 	}
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class SignoutRequest {
-		public String username;
-		public String password;
+		public @NotBlank String username;
+		public @NotBlank String password;
 	}
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class JoinServerRequest {
-		public String accessToken;
-		public String selectedProfile;
-		public String serverId;
+		public @NotBlank String accessToken;
+		public @NotBlank String selectedProfile;
+		public @NotBlank String serverId;
 	}
 	// --------
 

@@ -37,22 +37,22 @@ public class SessionAuthenticator {
 	 * @param token
 	 *            the token is assumed to be valid
 	 */
-	public void joinServer(Token token, String serverId, @Nullable String ip) {
-		PendingAuthentication auth = new PendingAuthentication();
+	public void joinServer(Token token, String serverId, Optional<String> ip) {
+		var auth = new PendingAuthentication();
 		auth.token = token;
 		auth.serverId = serverId;
-		auth.ip = ip;
+		auth.ip = ip.orElse(null);
 		auth.createdAt = System.currentTimeMillis();
 		serverId2auth.put(serverId, auth);
 	}
 
-	public Optional<YggdrasilCharacter> verifyUser(String username, String serverId, @Nullable String ip) {
-		PendingAuthentication auth = serverId2auth.remove(serverId);
+	public Optional<YggdrasilCharacter> verifyUser(String username, String serverId, Optional<String> ip) {
+		var auth = serverId2auth.remove(serverId);
 		if (auth == null
 				|| System.currentTimeMillis() > auth.createdAt + authExpireTime.toMillis()
 				|| !auth.token.getBoundCharacter().isPresent()
 				|| !auth.token.getBoundCharacter().get().getName().equals(username)
-				|| (ip != null && !ip.equals(auth.ip)))
+				|| (ip.isPresent() && !ip.get().equals(auth.ip)))
 			return empty();
 
 		return auth.token.getBoundCharacter();

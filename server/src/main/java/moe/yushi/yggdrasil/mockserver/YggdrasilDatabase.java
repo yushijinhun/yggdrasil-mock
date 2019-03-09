@@ -15,7 +15,6 @@ import static moe.yushi.yggdrasil.mockserver.UUIDUtils.unsign;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -143,7 +142,7 @@ public class YggdrasilDatabase {
 		}
 
 		public Map<String, Object> toCompleteResponse(boolean signed) {
-			Map<TextureType, Object> texturesResponse = new LinkedHashMap<>();
+			var texturesResponse = new LinkedHashMap<>();
 			textures.forEach((type, texture) -> {
 				// @formatter:off
 				texturesResponse.put(type, type.getMetadata(this)
@@ -356,15 +355,15 @@ public class YggdrasilDatabase {
 
 	private Texture processTexture(String location) {
 		BufferedImage img;
-		try (InputStream in = ctx.getResource(location).getInputStream()) {
+		try (var in = ctx.getResource(location).getInputStream()) {
 			img = ImageIO.read(in);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
 		return hash2texture.computeIfAbsent(Texture.computeTextureId(img), hash -> {
-			Texture texture = new Texture();
+			var texture = new Texture();
 			texture.hash = hash;
-			ByteArrayOutputStream bout = new ByteArrayOutputStream();
+			var bout = new ByteArrayOutputStream();
 			try {
 				ImageIO.write(img, "png", bout);
 			} catch (IOException e) {

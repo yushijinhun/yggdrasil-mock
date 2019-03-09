@@ -34,7 +34,7 @@ public class YggdrasilMockServer {
 			@Value("${build.version}") String buildVersion,
 			@Value("${build.name}") String buildName,
 			@Value("${git.commit.id}") String gitCommit) {
-		ServerMeta meta = new ServerMeta();
+		var meta = new ServerMeta();
 		meta.setSignaturePublickey(publickeyPem);
 		meta.setSkinDomains(skinDomains);
 		meta.setMeta(ofEntries(

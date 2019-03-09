@@ -17,10 +17,10 @@ public class RateLimiter {
 	private Duration limitDuration;
 
 	public boolean tryAccess(YggdrasilUser key) {
-		AtomicLong v1 = timings.get(key);
+		AtomicLong lastAccess = timings.get(key);
 		long now = System.currentTimeMillis();
 
-		if (v1 == null) {
+		if (lastAccess == null) {
 			// if putIfAbsent() returns a non-null value,
 			// which means another thread who is also trying to access this key
 			// has put an AtomicLong into the map between our last get() call and this putIfAbsent() call,
@@ -29,11 +29,11 @@ public class RateLimiter {
 			return timings.putIfAbsent(key, new AtomicLong(now)) == null;
 		}
 
-		long last = v1.get();
-		if (now - last > limitDuration.toMillis()) {
+		long lastAccessTime = lastAccess.get();
+		if (now - lastAccessTime > limitDuration.toMillis()) {
 			// same as above
 			// if the CAS operation fails, this access must be rate-limited.
-			return v1.compareAndSet(last, now);
+			return lastAccess.compareAndSet(lastAccessTime, now);
 		} else {
 			return false;
 		}

@@ -15,7 +15,6 @@ import org.springframework.boot.web.reactive.error.ErrorAttributes;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -33,19 +32,19 @@ public class YggdrasilWebExceptionHandler extends DefaultErrorWebExceptionHandle
 
 			@Override
 			public Map<String, Object> getErrorAttributes(ServerRequest request, boolean includeStackTrace) {
-				Map<String, Object> result = super.getErrorAttributes(request, includeStackTrace);
+				var result = super.getErrorAttributes(request, includeStackTrace);
 				result.put("yggdrasil", getYggdrasilError(request));
 				return result;
 			}
 
 			Map<String, Object> getYggdrasilError(ServerRequest request) {
-				Throwable error = getError(request);
+				var error = getError(request);
 				if (error instanceof YggdrasilException) {
 					return ofEntries(
 							entry("error", ((YggdrasilException) error).getYggdrasilError()),
 							entry("errorMessage", ((YggdrasilException) error).getYggdrasilMessage()));
 				} else {
-					HttpStatus errorStatus =
+					var errorStatus =
 							error instanceof ResponseStatusException
 									? ((ResponseStatusException) error).getStatus()
 									: INTERNAL_SERVER_ERROR;
@@ -63,18 +62,10 @@ public class YggdrasilWebExceptionHandler extends DefaultErrorWebExceptionHandle
 	@Override
 	protected RouterFunction<ServerResponse> getRoutingFunction(ErrorAttributes errorAttributes) {
 		return route(all(), req -> {
-			Map<String, Object> error = getErrorAttributes(req, false);
-			HttpStatus errorStatus = getHttpStatus(error);
+			var error = getErrorAttributes(req, false);
 			return ServerResponse.status(getHttpStatus(error))
 					.contentType(APPLICATION_JSON_UTF8)
-					.body(BodyInserters.fromObject(error.get("yggdrasil")))
-					.doOnNext((resp) -> logError(req, errorStatus));
+					.body(BodyInserters.fromObject(error.get("yggdrasil")));
 		});
-	}
-
-	@Override
-	protected void logError(ServerRequest request, HttpStatus errorStatus) {
-		if (errorStatus.is5xxServerError())
-			super.logError(request, errorStatus);
 	}
 }

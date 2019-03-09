@@ -7,20 +7,20 @@
 		"url": "git+https://github.com/yushijinhun/yggdrasil-mock.git"
 	},
 	"scripts": {
-		"integration-test": "./integration-test.sh",
+		"integration-test": "mocha src/test --timeout 10000",
 		"test": "eslint src/** yggdrasil-config.js"
 	},
 	"author": "yushijinhun",
 	"license": "GPL-3.0",
 	"devDependencies": {
-		"eslint": "^5.0.1",
-		"eslint-plugin-mocha": "^5.0.0"
+		"eslint": "^5.15.1",
+		"eslint-plugin-mocha": "^5.3.0"
 	},
 	"dependencies": {
-		"chai": "^4.1.2",
-		"mocha": "^5.2.0",
-		"node-rsa": "^1.0.0",
+		"chai": "^4.2.0",
+		"mocha": "^6.0.2",
+		"node-rsa": "^1.0.5",
 		"pngjs-nozlib": "^1.0.0",
-		"supertest": "^3.1.0"
+		"supertest": "^3.4.2"
 	}
 }

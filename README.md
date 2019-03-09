@@ -2,7 +2,7 @@
 [![Build status](https://img.shields.io/travis/yushijinhun/yggdrasil-mock.svg?style=flat-square)](https://travis-ci.org/yushijinhun/yggdrasil-mock)
 [![license](https://img.shields.io/github/license/yushijinhun/yggdrasil-mock.svg?style=flat-square)](https://github.com/yushijinhun/yggdrasil-mock/blob/master/LICENSE)
 ![languages](https://img.shields.io/badge/languages-javascript,_java-yellow.svg?style=flat-square)
-![require java 10+](https://img.shields.io/badge/require_java-10+-orange.svg?style=flat-square)
+![require java 11+](https://img.shields.io/badge/require_java-11+-orange.svg?style=flat-square)
 
 本项目提供了一套 [Yggdrasil API](https://github.com/yushijinhun/authlib-injector/wiki/Yggdrasil%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83) 的测试样例（位于 `test/` 下），和一个实现了 Yggdrasil API 的简易服务端（位于 `server/` 下）。
 
@@ -13,10 +13,10 @@
 ```bash
 cd test
 npm i .
-npm run integration-test [api_root]
+npm --api_root=<...> run integration-test
 ```
 
-`[api_root]` 为你服务端的 API Root，默认值为 `http://localhost:8080`（不要在末尾添加 `/`）。
+其中 `--api-root` 的值为你服务端的 API Root（不要在末尾添加 `/`），默认为 `http://localhost:8080`。
 
 ## 如何运行 Yggdrasil 简易服务端
 使用以下命令构建：

@@ -12,7 +12,7 @@ public final class KeyUtils {
 
 	public static KeyPair generateKey() {
 		try {
-			KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
+			var gen = KeyPairGenerator.getInstance("RSA");
 			gen.initialize(4096, new SecureRandom());
 			return gen.genKeyPair();
 		} catch (GeneralSecurityException e) {
@@ -21,7 +21,7 @@ public final class KeyUtils {
 	}
 
 	public static String toPEMPublicKey(PublicKey key) {
-		byte[] encoded = ((RSAPublicKey) key).getEncoded();
+		var encoded = ((RSAPublicKey) key).getEncoded();
 		return "-----BEGIN PUBLIC KEY-----\n" +
 				Base64.getMimeEncoder(76, new byte[] { '\n' }).encodeToString(encoded) +
 				"\n-----END PUBLIC KEY-----\n";

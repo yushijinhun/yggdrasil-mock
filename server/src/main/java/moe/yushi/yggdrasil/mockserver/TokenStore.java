@@ -98,7 +98,7 @@ public class TokenStore {
 	}
 
 	public Optional<Token> authenticate(String accessToken, @Nullable String clientToken, AvailableLevel availableLevel) {
-		Token token = accessToken2token.getQuietly(accessToken);
+		var token = accessToken2token.getQuietly(accessToken);
 		if (token == null)
 			return empty();
 
@@ -149,7 +149,7 @@ public class TokenStore {
 	}
 
 	public Token acquireToken(YggdrasilUser user, @Nullable String clientToken, @Nullable YggdrasilCharacter selectedCharacter) {
-		Token token = new Token();
+		var token = new Token();
 		token.accessToken = randomUnsignedUUID();
 		if (selectedCharacter == null) {
 			if (user.getCharacters().size() == 1) {

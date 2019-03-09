@@ -11,7 +11,6 @@ import java.security.Signature;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -48,7 +47,7 @@ public final class PropertiesUtils {
 	public static List<?> properties(boolean sign, Entry<String, String>... entries) {
 		return Stream.of(entries)
 				.map(entry -> {
-					Map<String, String> property = new LinkedHashMap<>();
+					var property = new LinkedHashMap<>();
 					property.put("name", entry.getKey());
 					property.put("value", entry.getValue());
 					if (sign) {
@@ -65,7 +64,7 @@ public final class PropertiesUtils {
 
 	private static String sign(String data) {
 		try {
-			Signature signature = Signature.getInstance("SHA1withRSA");
+			var signature = Signature.getInstance("SHA1withRSA");
 			signature.initSign(keyPair.getPrivate(), new SecureRandom());
 			signature.update(data.getBytes(UTF_8));
 			return Base64.getEncoder().encodeToString(signature.sign());

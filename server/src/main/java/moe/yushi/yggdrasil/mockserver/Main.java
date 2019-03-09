@@ -3,12 +3,12 @@ package moe.yushi.yggdrasil.mockserver;
 import static java.text.MessageFormat.format;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 
 public final class Main {
 
@@ -36,7 +36,7 @@ public final class Main {
 	}
 
 	private static void copyDefaultConfigTo(Path target) throws IOException {
-		try (InputStream in = YggdrasilMockServer.class.getResourceAsStream(DEFAULT_CONFIG_PATH)) {
+		try (var in = YggdrasilMockServer.class.getResourceAsStream(DEFAULT_CONFIG_PATH)) {
 			if (in == null)
 				throw new FileNotFoundException(DEFAULT_CONFIG_PATH);
 
@@ -45,13 +45,14 @@ public final class Main {
 	}
 
 	private static void startApplication(String[] args) {
-		SpringApplication app = new SpringApplication(YggdrasilMockServer.class);
+		var app = new SpringApplication(YggdrasilMockServer.class);
+		app.setWebApplicationType(WebApplicationType.REACTIVE);
 		app.setDefaultProperties(getDefaultProperties());
 		app.run(args);
 	}
 
 	private static Properties getDefaultProperties() {
-		Properties properties = new Properties();
+		var properties = new Properties();
 		tryLoadProperties("/git.properties", properties);
 		tryLoadProperties("/META-INF/build-info.properties", properties);
 		return properties;
@@ -66,7 +67,7 @@ public final class Main {
 	}
 
 	private static void loadProperties(String location, Properties properties) throws IOException {
-		try (InputStream in = YggdrasilMockServer.class.getResourceAsStream(location)) {
+		try (var in = YggdrasilMockServer.class.getResourceAsStream(location)) {
 			if (in == null)
 				throw new FileNotFoundException(location);
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-TRAVIS_GRADLE_VERSION="4.7"
-TRAVIS_OPENJDK_VERSION="10"
+TRAVIS_GRADLE_VERSION="5.2"
+TRAVIS_OPENJDK_VERSION="11"
 APPLICATION_CONFIG='
 {
 	"server": {
@@ -77,4 +77,4 @@ done
 log "Server started"
 
 log "Running integration test"
-npm run integration-test "http://localhost:8081"
+npm --api_root="http://localhost:8081" run integration-test
