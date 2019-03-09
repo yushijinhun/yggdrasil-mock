@@ -1,10 +1,8 @@
-**This part of the repository is not licensed under GPLv3 License.**
-
 In this directory are example skins and capes. They are copyrighted by their original authors. Thank them for permitting us to use their works here.
 
 |File(s)|Original author(s)|Link(s)|
 |-------|------------------|-------|
-|`eromanga/*`|ElizaMozi|[Original post](http://www.mcbbs.net/thread-705557-1-1.html)(Chinese); [Approval of use](http://www.mcbbs.net/forum.php?mod=viewthread&tid=705557&page=50#pid12693907)(Chinese);|
+|`eromanga/*`|ElizaMozi|[Original post](http://www.mcbbs.net/thread-705557-1-1.html)(Chinese); [Approval of use](http://www.mcbbs.net/forum.php?mod=viewthread&tid=705557&page=51#pid12694932)(Chinese);|
 
 
 Metadata of textures:
