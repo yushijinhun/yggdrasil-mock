@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.WebApplicationType;
 
 public final class Main {
 
@@ -46,7 +45,6 @@ public final class Main {
 
 	private static void startApplication(String[] args) {
 		var app = new SpringApplication(YggdrasilMockServer.class);
-		app.setWebApplicationType(WebApplicationType.REACTIVE);
 		app.setDefaultProperties(getDefaultProperties());
 		app.run(args);
 	}
