@@ -1,8 +1,6 @@
 # yggdrasil-mock
-[![Build status](https://img.shields.io/travis/yushijinhun/yggdrasil-mock.svg?style=flat-square)](https://travis-ci.org/yushijinhun/yggdrasil-mock)
+[![Build status](https://img.shields.io/github/workflow/status/yushijinhun/yggdrasil-mock/CI?style=flat-square)
 [![license](https://img.shields.io/github/license/yushijinhun/yggdrasil-mock.svg?style=flat-square)](https://github.com/yushijinhun/yggdrasil-mock/blob/master/LICENSE)
-![languages](https://img.shields.io/badge/languages-javascript,_java-yellow.svg?style=flat-square)
-![require java 11+](https://img.shields.io/badge/require_java-11+-orange.svg?style=flat-square)
 
 本项目提供了一套 [Yggdrasil API](https://github.com/yushijinhun/authlib-injector/wiki/Yggdrasil%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83) 的测试样例（位于 `test/` 下），和一个实现了 Yggdrasil API 的简易服务端（位于 `server/` 下）。
 
