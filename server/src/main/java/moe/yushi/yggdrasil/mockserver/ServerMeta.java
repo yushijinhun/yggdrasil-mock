@@ -7,7 +7,7 @@ public class ServerMeta {
 
 	private List<String> skinDomains;
 	private String signaturePublickey;
-	private Map<String, String> meta;
+	private Map<String, Object> meta;
 
 	public List<String> getSkinDomains() {
 		return skinDomains;
@@ -25,11 +25,11 @@ public class ServerMeta {
 		this.signaturePublickey = signaturePublickey;
 	}
 
-	public Map<String, String> getMeta() {
+	public Map<String, Object> getMeta() {
 		return meta;
 	}
 
-	public void setMeta(Map<String, String> meta) {
+	public void setMeta(Map<String, Object> meta) {
 		this.meta = meta;
 	}
 

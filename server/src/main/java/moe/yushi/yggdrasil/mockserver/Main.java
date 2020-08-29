@@ -57,19 +57,13 @@ public final class Main {
 	}
 
 	private static void tryLoadProperties(String location, Properties properties) {
-		try {
-			loadProperties(location, properties);
-		} catch (IOException e) {
-			System.err.println(format("Unable to load properties {0}: {1}", location, e));
-		}
-	}
-
-	private static void loadProperties(String location, Properties properties) throws IOException {
 		try (var in = YggdrasilMockServer.class.getResourceAsStream(location)) {
 			if (in == null)
 				throw new FileNotFoundException(location);
 
 			properties.load(in);
+		} catch (IOException e) {
+			System.err.println(format("Unable to load properties {0}: {1}", location, e));
 		}
 	}
 }

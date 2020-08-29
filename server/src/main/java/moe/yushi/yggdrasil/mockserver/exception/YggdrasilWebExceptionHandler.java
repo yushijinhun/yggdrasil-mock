@@ -3,21 +3,21 @@ package moe.yushi.yggdrasil.mockserver.exception;
 import static java.util.Map.entry;
 import static java.util.Map.ofEntries;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
 import static org.springframework.web.reactive.function.server.RequestPredicates.all;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import java.util.Map;
 import org.springframework.boot.autoconfigure.web.ErrorProperties;
 import org.springframework.boot.autoconfigure.web.ResourceProperties;
 import org.springframework.boot.autoconfigure.web.reactive.error.DefaultErrorWebExceptionHandler;
+import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
 import org.springframework.boot.web.reactive.error.ErrorAttributes;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -31,8 +31,8 @@ public class YggdrasilWebExceptionHandler extends DefaultErrorWebExceptionHandle
 		super(new DefaultErrorAttributes() {
 
 			@Override
-			public Map<String, Object> getErrorAttributes(ServerRequest request, boolean includeStackTrace) {
-				var result = super.getErrorAttributes(request, includeStackTrace);
+			public Map<String, Object> getErrorAttributes(ServerRequest request, ErrorAttributeOptions options) {
+				var result = super.getErrorAttributes(request, options);
 				result.put("yggdrasil", getYggdrasilError(request));
 				return result;
 			}
@@ -62,10 +62,10 @@ public class YggdrasilWebExceptionHandler extends DefaultErrorWebExceptionHandle
 	@Override
 	protected RouterFunction<ServerResponse> getRoutingFunction(ErrorAttributes errorAttributes) {
 		return route(all(), req -> {
-			var error = getErrorAttributes(req, false);
+			var error = getErrorAttributes(req, getErrorAttributeOptions(req, MediaType.ALL));
 			return ServerResponse.status(getHttpStatus(error))
-					.contentType(APPLICATION_JSON_UTF8)
-					.body(BodyInserters.fromObject(error.get("yggdrasil")));
+					.contentType(MediaType.APPLICATION_JSON)
+					.bodyValue(error.get("yggdrasil"));
 		});
 	}
 }

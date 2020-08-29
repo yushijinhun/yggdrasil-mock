@@ -45,7 +45,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import moe.yushi.yggdrasil.mockserver.TokenStore.AvailableLevel;
 import moe.yushi.yggdrasil.mockserver.TokenStore.Token;
 import moe.yushi.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilCharacter;
@@ -234,7 +233,6 @@ public class Router {
 	// --------
 
 	// ---- Requests ----
-	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class LoginRequest {
 		public @NotBlank String username;
 		public @NotBlank String password;
@@ -242,7 +240,6 @@ public class Router {
 		public boolean requestUser = false;
 	}
 
-	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class RefreshRequest {
 		public @NotBlank String accessToken;
 		public String clientToken;
@@ -250,30 +247,25 @@ public class Router {
 		public ProfileBody selectedProfile;
 	}
 
-	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class ProfileBody {
 		public @NotBlank String id;
 		public @NotBlank String name;
 	}
 
-	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class ValidateRequest {
 		public @NotBlank String accessToken;
 		public String clientToken;
 	}
 
-	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class InvalidateRequest {
 		public @NotBlank String accessToken;
 	}
 
-	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class SignoutRequest {
 		public @NotBlank String username;
 		public @NotBlank String password;
 	}
 
-	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class JoinServerRequest {
 		public @NotBlank String accessToken;
 		public @NotBlank String selectedProfile;
