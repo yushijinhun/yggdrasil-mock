@@ -1,4 +1,4 @@
-package moe.yushi.yggdrasil.mockserver;
+package moe.yushi.yggdrasil_mock;
 
 import java.time.Duration;
 import java.util.Map;
@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
-import moe.yushi.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilUser;
+import moe.yushi.yggdrasil_mock.YggdrasilDatabase.YggdrasilUser;
 
 @Component
 @ConfigurationProperties(prefix = "yggdrasil.rate-limit", ignoreUnknownFields = false)

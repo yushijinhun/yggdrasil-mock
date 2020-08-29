@@ -1,6 +1,6 @@
 {
 	"name": "yggdrasil-test",
-	"version": "0.0.1",
+	"private": true,
 	"description": "Yggdrasil API integration test",
 	"repository": {
 		"type": "git",

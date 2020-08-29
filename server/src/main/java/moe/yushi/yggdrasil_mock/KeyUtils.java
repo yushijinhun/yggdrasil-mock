@@ -1,4 +1,4 @@
-package moe.yushi.yggdrasil.mockserver;
+package moe.yushi.yggdrasil_mock;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
@@ -9,6 +9,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
 
 public final class KeyUtils {
+	private KeyUtils() {}
 
 	public static KeyPair generateKey() {
 		try {
@@ -26,7 +27,4 @@ public final class KeyUtils {
 				Base64.getMimeEncoder(76, new byte[] { '\n' }).encodeToString(encoded) +
 				"\n-----END PUBLIC KEY-----\n";
 	}
-
-	private KeyUtils() {}
-
 }

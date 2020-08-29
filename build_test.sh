@@ -32,7 +32,7 @@ npm install .
 log "npm test"
 npm test
 log "Starting yggdrasil server"
-../server/build/libs/yggdrasil-mock-server-*.jar "--spring.application.json=$APPLICATION_CONFIG" &
+../server/build/libs/*.jar "--spring.application.json=$APPLICATION_CONFIG" &
 onexit(){
 	set +e
 	if jobs -rp|grep -P "\d+">/dev/null;then

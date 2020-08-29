@@ -1,4 +1,4 @@
-package moe.yushi.yggdrasil.mockserver.exception;
+package moe.yushi.yggdrasil_mock.exception;
 
 import static java.util.Map.entry;
 import static java.util.Map.ofEntries;

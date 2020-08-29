@@ -1,8 +1,9 @@
-package moe.yushi.yggdrasil.mockserver;
+package moe.yushi.yggdrasil_mock;
 
 import java.util.UUID;
 
 public final class UUIDUtils {
+	private UUIDUtils() {}
 
 	public static String unsign(UUID uuid) {
 		return uuid.toString().replace("-", "");
@@ -28,7 +29,4 @@ public final class UUIDUtils {
 	public static String randomUnsignedUUID() {
 		return unsign(UUID.randomUUID());
 	}
-
-	private UUIDUtils() {}
-
 }

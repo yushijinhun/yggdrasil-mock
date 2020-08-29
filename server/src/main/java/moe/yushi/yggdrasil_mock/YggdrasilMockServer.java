@@ -1,9 +1,9 @@
-package moe.yushi.yggdrasil.mockserver;
+package moe.yushi.yggdrasil_mock;
 
 import static java.text.MessageFormat.format;
 import static java.util.Map.entry;
 import static java.util.Map.ofEntries;
-import static moe.yushi.yggdrasil.mockserver.PropertiesUtils.getSignaturePublicKey;
+import static moe.yushi.yggdrasil_mock.PropertiesUtils.getSignaturePublicKey;
 import java.util.List;
 import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Value;

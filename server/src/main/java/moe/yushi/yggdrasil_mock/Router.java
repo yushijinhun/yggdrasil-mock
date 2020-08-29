@@ -1,20 +1,20 @@
-package moe.yushi.yggdrasil.mockserver;
+package moe.yushi.yggdrasil_mock;
 
 import static java.util.Map.entry;
 import static java.util.Map.ofEntries;
 import static java.util.Optional.of;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.stream.Collectors.toList;
-import static moe.yushi.yggdrasil.mockserver.UUIDUtils.randomUnsignedUUID;
-import static moe.yushi.yggdrasil.mockserver.UUIDUtils.toUUID;
-import static moe.yushi.yggdrasil.mockserver.UUIDUtils.unsign;
-import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.m_access_denied;
-import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.m_invalid_credentials;
-import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.m_invalid_token;
-import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.m_profile_not_found;
-import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.m_token_already_assigned;
-import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.newForbiddenOperationException;
-import static moe.yushi.yggdrasil.mockserver.exception.YggdrasilException.newIllegalArgumentException;
+import static moe.yushi.yggdrasil_mock.UUIDUtils.randomUnsignedUUID;
+import static moe.yushi.yggdrasil_mock.UUIDUtils.toUUID;
+import static moe.yushi.yggdrasil_mock.UUIDUtils.unsign;
+import static moe.yushi.yggdrasil_mock.exception.YggdrasilException.m_access_denied;
+import static moe.yushi.yggdrasil_mock.exception.YggdrasilException.m_invalid_credentials;
+import static moe.yushi.yggdrasil_mock.exception.YggdrasilException.m_invalid_token;
+import static moe.yushi.yggdrasil_mock.exception.YggdrasilException.m_profile_not_found;
+import static moe.yushi.yggdrasil_mock.exception.YggdrasilException.m_token_already_assigned;
+import static moe.yushi.yggdrasil_mock.exception.YggdrasilException.newForbiddenOperationException;
+import static moe.yushi.yggdrasil_mock.exception.YggdrasilException.newIllegalArgumentException;
 import static org.springframework.http.CacheControl.maxAge;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.MediaType.IMAGE_PNG;
@@ -45,10 +45,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import moe.yushi.yggdrasil.mockserver.TokenStore.AvailableLevel;
-import moe.yushi.yggdrasil.mockserver.TokenStore.Token;
-import moe.yushi.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilCharacter;
-import moe.yushi.yggdrasil.mockserver.YggdrasilDatabase.YggdrasilUser;
+import moe.yushi.yggdrasil_mock.TokenStore.AvailableLevel;
+import moe.yushi.yggdrasil_mock.TokenStore.Token;
+import moe.yushi.yggdrasil_mock.YggdrasilDatabase.YggdrasilCharacter;
+import moe.yushi.yggdrasil_mock.YggdrasilDatabase.YggdrasilUser;
 
 @Validated
 @RestController

@@ -1,5 +1,4 @@
-
-package moe.yushi.yggdrasil.mockserver;
+package moe.yushi.yggdrasil_mock;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -9,9 +8,9 @@ import static java.util.Map.ofEntries;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
-import static moe.yushi.yggdrasil.mockserver.PropertiesUtils.base64Encoded;
-import static moe.yushi.yggdrasil.mockserver.PropertiesUtils.properties;
-import static moe.yushi.yggdrasil.mockserver.UUIDUtils.unsign;
+import static moe.yushi.yggdrasil_mock.PropertiesUtils.base64Encoded;
+import static moe.yushi.yggdrasil_mock.PropertiesUtils.properties;
+import static moe.yushi.yggdrasil_mock.UUIDUtils.unsign;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

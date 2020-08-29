@@ -1,4 +1,4 @@
-package moe.yushi.yggdrasil.mockserver;
+package moe.yushi.yggdrasil_mock;
 
 import java.util.List;
 import java.util.Map;
@@ -32,5 +32,4 @@ public class ServerMeta {
 	public void setMeta(Map<String, Object> meta) {
 		this.meta = meta;
 	}
-
 }

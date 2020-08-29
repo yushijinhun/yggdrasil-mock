@@ -1,4 +1,4 @@
-package moe.yushi.yggdrasil.mockserver;
+package moe.yushi.yggdrasil_mock;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Map.ofEntries;
@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public final class PropertiesUtils {
+	private PropertiesUtils() {}
 
 	private static KeyPair keyPair;
 	private static ObjectMapper objectMapper;
@@ -72,6 +73,4 @@ public final class PropertiesUtils {
 			throw new RuntimeException(e);
 		}
 	}
-
-	private PropertiesUtils() {}
 }

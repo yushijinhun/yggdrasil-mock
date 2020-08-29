@@ -1,28 +1,12 @@
 # yggdrasil-mock
-[![Build status](https://img.shields.io/github/workflow/status/yushijinhun/yggdrasil-mock/CI?style=flat-square)
+[![Build status](https://img.shields.io/github/workflow/status/yushijinhun/yggdrasil-mock/CI?style=flat-square)](https://github.com/yushijinhun/yggdrasil-mock/actions?query=workflow%3ACI)
 [![license](https://img.shields.io/github/license/yushijinhun/yggdrasil-mock.svg?style=flat-square)](https://github.com/yushijinhun/yggdrasil-mock/blob/master/LICENSE)
 
-本项目提供了一套 [Yggdrasil API](https://github.com/yushijinhun/authlib-injector/wiki/Yggdrasil%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83) 的测试样例（位于 `test/` 下），和一个实现了 Yggdrasil API 的简易服务端（位于 `server/` 下）。
+简易的 Yggdrasil 服务端，用于测试及演示用途。参考 [authlib-injector wiki](https://github.com/yushijinhun/authlib-injector) 以了解更多。
 
-## 如何用它测试 Yggdrasil 服务端
-首先，向你的服务端中添加测试数据。这些数据定义在 `test/yggdrasil-config.js` 中，你可以按需进行修改（如修改 Email、密码、角色名等）。然后，将 `test/yggdrasil-config.js` 中的 `rateLimits.login` 修改为你服务端的登录 API 的速率限制时限（两次请求间的最小时间间隔）。
+## 构建 & 运行
+在 `server` 目录下执行 `gradle` 命令进行构建。
 
-再执行：
-```bash
-cd test
-npm i .
-npm --api_root=<...> run integration-test
-```
-
-其中 `--api-root` 的值为你服务端的 API Root（不要在末尾添加 `/`），默认为 `http://localhost:8080`。
-
-## 如何运行 Yggdrasil 简易服务端
-使用以下命令构建：
-```bash
-cd server
-gradle
-```
-
-构建输出位于 `server/build/libs/` 下。JAR 可以直接运行。
+构建输出位于 `server/build/libs/` 下。JAR 可以直接运行，要求 Java 版本为 11 或以上。
 
 第一次运行时，程序会在当前目录下释放配置文件 `application.yaml`，你可以编辑其中设置然后重新运行。
