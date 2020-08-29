@@ -22,6 +22,7 @@ public class YggdrasilMockServer {
 	private List<String> skinDomains;
 	private String url;
 	private String serverName;
+	private boolean loginWithCharacterName;
 
 	@Bean
 	public String publickeyPem() {
@@ -40,7 +41,8 @@ public class YggdrasilMockServer {
 		meta.setMeta(ofEntries(
 				entry("serverName", serverName),
 				entry("implementationName", buildName),
-				entry("implementationVersion", format("{0}-{1}", buildVersion, gitCommit.substring(0, 7)))));
+				entry("implementationVersion", format("{0}-{1}", buildVersion, gitCommit.substring(0, 7))),
+				entry("feature.non_email_login", loginWithCharacterName)));
 		return meta;
 	}
 
@@ -71,5 +73,13 @@ public class YggdrasilMockServer {
 
 	public void setServerName(String serverName) {
 		this.serverName = serverName;
+	}
+
+	public boolean isLoginWithCharacterName() {
+		return loginWithCharacterName;
+	}
+
+	public void setLoginWithCharacterName(boolean loginWithCharacterName) {
+		this.loginWithCharacterName = loginWithCharacterName;
 	}
 }

@@ -44,6 +44,9 @@ module.exports = {
 				name: "character3"
 			}
 		}
-	}
+	},
+
+	// 测试使用角色名称登录
+	characterNameLogin: true
 
 };

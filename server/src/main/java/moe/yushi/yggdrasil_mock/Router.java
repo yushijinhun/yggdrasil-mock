@@ -31,6 +31,7 @@ import javax.validation.Valid;
 import javax.validation.ValidationException;
 import javax.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -59,6 +60,7 @@ public class Router {
 	private @Autowired YggdrasilDatabase database;
 	private @Autowired TokenStore tokenStore;
 	private @Autowired SessionAuthenticator sessionAuth;
+	private @Value("${yggdrasil.core.login-with-character-name}") boolean loginWithCharacterName;
 
 	@GetMapping("/")
 	public ServerMeta root() {
@@ -75,12 +77,21 @@ public class Router {
 
 	@PostMapping("/authserver/authenticate")
 	public Map<?, ?> authenticate(@RequestBody @Valid LoginRequest req) {
-		var user = passwordAuthenticated(req.username, req.password);
+		YggdrasilUser user;
+		YggdrasilCharacter character = null;
+		if (loginWithCharacterName) {
+			character = database.findCharacterByName(req.username).orElse(null);
+		}
+		if (character == null) {
+			user = passwordAuthenticated(req.username, req.password);
+		} else {
+			user = passwordAuthenticated(character.getOwner().getEmail(), req.password);
+		}
 
 		if (req.clientToken == null)
 			req.clientToken = randomUnsignedUUID();
 
-		var token = tokenStore.acquireToken(user, req.clientToken, null);
+		var token = tokenStore.acquireToken(user, req.clientToken, character);
 
 		var response = new LinkedHashMap<>();
 		response.put("accessToken", token.getAccessToken());

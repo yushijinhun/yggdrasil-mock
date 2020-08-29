@@ -273,6 +273,63 @@ describe("yggdrasil basic api", function () {
 		it("user3", () => authenticateUser3());
 	});
 
+	(config.characterNameLogin ? describe : describe.skip)("authenticate with character name", function () {
+
+		this.slow(slowTime + config.rateLimits.login);
+		it(`${u2character1}`, () => request.post("/authserver/authenticate")
+			.send({
+				username: u2character1,
+				password: config.data.user2.password,
+				agent: agent
+			})
+			.expect(200)
+			.expect(res => {
+				let response = res.body;
+				verify.verifyAuthenticateResponse(response);
+				expect(namesOf(response.availableProfiles)).to.have.members([u2character1]);
+				expect(response.selectedProfile).to.exist;
+				expect(response.selectedProfile.name).to.equal(u2character1);
+			})
+			.then(res => res.body)
+			.then(delay(config.rateLimits.login)));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it(`${u3character1}`, () => request.post("/authserver/authenticate")
+			.send({
+				username: u3character1,
+				password: config.data.user3.password,
+				agent: agent
+			})
+			.expect(200)
+			.expect(res => {
+				let response = res.body;
+				verify.verifyAuthenticateResponse(response);
+				expect(namesOf(response.availableProfiles)).to.have.members([u3character1, u3character2]);
+				expect(response.selectedProfile).to.exist;
+				expect(response.selectedProfile.name).to.equal(u3character1);
+			})
+			.then(res => res.body)
+			.then(delay(config.rateLimits.login)));
+
+		this.slow(slowTime + config.rateLimits.login);
+		it(`${u3character2}`, () => request.post("/authserver/authenticate")
+			.send({
+				username: u3character2,
+				password: config.data.user3.password,
+				agent: agent
+			})
+			.expect(200)
+			.expect(res => {
+				let response = res.body;
+				verify.verifyAuthenticateResponse(response);
+				expect(namesOf(response.availableProfiles)).to.have.members([u3character1, u3character2]);
+				expect(response.selectedProfile).to.exist;
+				expect(response.selectedProfile.name).to.equal(u3character2);
+			})
+			.then(res => res.body)
+			.then(delay(config.rateLimits.login)));
+	});
+
 	function findProfile(name, availableProfiles) {
 		let characterX;
 		for (let character of availableProfiles) {
