@@ -1,5 +1,0 @@
-sudo: false
-dist: trusty
-language: generic
-script:
-- ./build_test.sh --travis-ci
