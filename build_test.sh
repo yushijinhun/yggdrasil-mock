@@ -1,4 +1,5 @@
 #!/bin/bash
+set -em
 
 APPLICATION_CONFIG='
 {
@@ -17,21 +18,15 @@ APPLICATION_CONFIG='
 }
 '
 
-if tput colors>/dev/null 2>&1;then
-	LOG_PREFIX="\e[93m\e[1m[build]\e[0m "
-else
-	LOG_PREFIX="[build] "
-fi
 log(){
-	echo -e "$LOG_PREFIX$*"
+	echo -e "\e[93m\e[1m[build]\e[0m $*"
 }
 
-set -em
-pushd server
+pushd server >/dev/null
 log "Building yggdrasil server"
 gradle clean bootJar
-popd
-pushd test
+popd >/dev/null
+pushd test >/dev/null
 log "Initialize npm"
 npm install .
 log "npm test"
