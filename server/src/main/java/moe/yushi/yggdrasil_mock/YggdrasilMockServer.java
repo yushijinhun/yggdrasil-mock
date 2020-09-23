@@ -32,7 +32,6 @@ public class YggdrasilMockServer {
 	@Bean
 	public ServerMeta serverMeta(
 			@Value("#{publickeyPem}") String publickeyPem,
-			@Value("${build.version}") String buildVersion,
 			@Value("${build.name}") String buildName,
 			@Value("${git.commit.id}") String gitCommit) {
 		var meta = new ServerMeta();
@@ -41,7 +40,7 @@ public class YggdrasilMockServer {
 		meta.setMeta(ofEntries(
 				entry("serverName", serverName),
 				entry("implementationName", buildName),
-				entry("implementationVersion", format("{0}-{1}", buildVersion, gitCommit.substring(0, 7))),
+				entry("implementationVersion", format("git-" + gitCommit.substring(0, 7))),
 				entry("feature.non_email_login", loginWithCharacterName)));
 		return meta;
 	}
