@@ -11,7 +11,7 @@ import moe.yushi.yggdrasil_mock.TokenStore.Token;
 import moe.yushi.yggdrasil_mock.YggdrasilDatabase.YggdrasilCharacter;
 
 @Component
-@ConfigurationProperties(prefix = "yggdrasil.session", ignoreUnknownFields = false)
+@ConfigurationProperties(prefix = "yggdrasil.session")
 public class SessionAuthenticator {
 
 	private static final int MAX_AUTH_COUNT = 100_000;

@@ -17,7 +17,7 @@ import moe.yushi.yggdrasil_mock.YggdrasilDatabase.YggdrasilCharacter;
 import moe.yushi.yggdrasil_mock.YggdrasilDatabase.YggdrasilUser;
 
 @Component
-@ConfigurationProperties(prefix = "yggdrasil.token", ignoreUnknownFields = false)
+@ConfigurationProperties(prefix = "yggdrasil.token")
 public class TokenStore {
 
 	private static final int MAX_TOKEN_COUNT = 100_000;

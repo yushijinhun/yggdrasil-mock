@@ -36,7 +36,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriBuilder;
 
 @Component
-@ConfigurationProperties(prefix = "yggdrasil.database", ignoreUnknownFields = false)
+@ConfigurationProperties(prefix = "yggdrasil.database")
 public class YggdrasilDatabase {
 
 	public static enum ModelType {

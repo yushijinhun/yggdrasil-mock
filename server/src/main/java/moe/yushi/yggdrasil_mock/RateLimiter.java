@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import moe.yushi.yggdrasil_mock.YggdrasilDatabase.YggdrasilUser;
 
 @Component
-@ConfigurationProperties(prefix = "yggdrasil.rate-limit", ignoreUnknownFields = false)
+@ConfigurationProperties(prefix = "yggdrasil.rate-limit")
 public class RateLimiter {
 
 	private Map<YggdrasilUser, AtomicLong> timings = new ConcurrentHashMap<>();

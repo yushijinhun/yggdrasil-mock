@@ -15,7 +15,7 @@ import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Configuration
-@ConfigurationProperties(prefix = "yggdrasil.core", ignoreUnknownFields = false)
+@ConfigurationProperties(prefix = "yggdrasil.core")
 @SpringBootApplication
 public class YggdrasilMockServer {
 
