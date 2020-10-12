@@ -60,6 +60,7 @@ public class Router {
 	private @Autowired YggdrasilDatabase database;
 	private @Autowired TokenStore tokenStore;
 	private @Autowired SessionAuthenticator sessionAuth;
+	private @Autowired Texture.Storage texturesStorage;
 	private @Value("${yggdrasil.core.login-with-character-name}") boolean loginWithCharacterName;
 
 	@GetMapping("/")
@@ -204,12 +205,12 @@ public class Router {
 
 	@GetMapping("/textures/{hash:[a-f0-9]{64}}")
 	public ResponseEntity<?> texture(@PathVariable String hash) {
-		return database.findTextureByHash(hash)
+		return texturesStorage.getTexture(hash)
 				.map(texture -> ok()
 						.contentType(IMAGE_PNG)
-						.eTag(texture.getHash())
+						.eTag(texture.hash)
 						.cacheControl(maxAge(30, DAYS).cachePublic())
-						.body(texture.getData()))
+						.body(texture.data))
 				.orElse(notFound().build());
 	}
 
