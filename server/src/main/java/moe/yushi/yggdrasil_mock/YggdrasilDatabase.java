@@ -6,14 +6,19 @@ import static java.util.Map.ofEntries;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.joining;
 import static moe.yushi.yggdrasil_mock.PropertiesUtils.base64Encoded;
 import static moe.yushi.yggdrasil_mock.PropertiesUtils.properties;
 import static moe.yushi.yggdrasil_mock.UUIDUtils.unsign;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -66,6 +71,7 @@ public class YggdrasilDatabase {
 		private String name;
 		private ModelType model = ModelType.STEVE;
 		private Map<TextureType, Texture> textures = new ConcurrentSkipListMap<>();
+		private Set<TextureType> uploadableTextures = Collections.newSetFromMap(new ConcurrentHashMap<>());
 		private YggdrasilUser owner;
 
 		public UUID getUuid() {
@@ -100,6 +106,10 @@ public class YggdrasilDatabase {
 			return owner;
 		}
 
+		public Set<TextureType> getUploadableTextures() {
+			return uploadableTextures;
+		}
+
 		public Map<String, Object> toSimpleResponse() {
 			return
 			// @formatter:off
@@ -110,6 +120,7 @@ public class YggdrasilDatabase {
 			// @formatter:on
 		}
 
+		@SuppressWarnings("unchecked")
 		public Map<String, Object> toCompleteResponse(boolean signed) {
 			var texturesResponse = new LinkedHashMap<>();
 			textures.forEach((type, texture) -> {
@@ -124,19 +135,36 @@ public class YggdrasilDatabase {
 				// @formatter:on
 			});
 
+			var properties = new ArrayList<Entry<String, String>>();
+			// @formatter:off
+			properties.add(
+				entry("textures", base64Encoded(
+					entry("timestamp", System.currentTimeMillis()),
+					entry("profileId", unsign(uuid)),
+					entry("profileName", name),
+					entry("textures", texturesResponse)
+				))
+			);
+			// @formatter:on
+
+			if (!uploadableTextures.isEmpty()) {
+				// @formatter:off
+				properties.add(
+					entry("uploadableTextures",
+						uploadableTextures.stream()
+							.map(type -> type.name().toLowerCase())
+							.collect(joining(","))
+					)
+				);
+				// @formatter:on
+			}
+
 			return
 			// @formatter:off
 			ofEntries(
 				entry("id", unsign(uuid)),
 				entry("name", name),
-				entry("properties", properties(signed,
-					entry("textures", base64Encoded(
-						entry("timestamp", System.currentTimeMillis()),
-						entry("profileId", unsign(uuid)),
-						entry("profileName", name),
-						entry("textures", texturesResponse)
-					))
-				))
+				entry("properties", properties(signed, properties.toArray(Entry[]::new)))
 			);
 			// @formatter:on
 		}

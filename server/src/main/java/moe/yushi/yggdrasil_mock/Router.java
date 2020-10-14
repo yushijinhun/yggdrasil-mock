@@ -21,6 +21,8 @@ import static org.springframework.http.MediaType.IMAGE_PNG;
 import static org.springframework.http.ResponseEntity.noContent;
 import static org.springframework.http.ResponseEntity.notFound;
 import static org.springframework.http.ResponseEntity.ok;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,8 @@ import java.util.stream.Stream;
 import javax.validation.Valid;
 import javax.validation.ValidationException;
 import javax.validation.constraints.NotBlank;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -37,23 +41,31 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.lang.Nullable;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import moe.yushi.yggdrasil_mock.TokenStore.AvailableLevel;
 import moe.yushi.yggdrasil_mock.TokenStore.Token;
+import moe.yushi.yggdrasil_mock.YggdrasilDatabase.ModelType;
+import moe.yushi.yggdrasil_mock.YggdrasilDatabase.TextureType;
 import moe.yushi.yggdrasil_mock.YggdrasilDatabase.YggdrasilCharacter;
 import moe.yushi.yggdrasil_mock.YggdrasilDatabase.YggdrasilUser;
 
 @Validated
 @RestController
 public class Router {
+
+	private final Logger logger = LoggerFactory.getLogger(Router.class);
 
 	private @Autowired ServerMeta meta;
 	private @Autowired RateLimiter rateLimiter;
@@ -214,6 +226,36 @@ public class Router {
 				.orElse(notFound().build());
 	}
 
+	@DeleteMapping("/api/user/profile/{uuid}/{textureType}")
+	public ResponseEntity<?> deleteTexture(@PathVariable String uuid, @PathVariable TextureType textureType, @RequestHeader(required = false) String authorization) {
+		var character = authTextureOperation(uuid, textureType, authorization);
+		character.getTextures().remove(textureType);
+		return noContent().build();
+	}
+
+	@PutMapping("/api/user/profile/{uuid}/{textureType}")
+	public ResponseEntity<?> uploadTexture(@PathVariable String uuid, @PathVariable TextureType textureType, @RequestHeader(required = false) String authorization,
+			@RequestPart("file") byte[] imageFile,
+			@RequestPart(name = "model", required = false) String textureModel) {
+		var character = authTextureOperation(uuid, textureType, authorization);
+		Texture texture;
+		try (var in = new ByteArrayInputStream(imageFile)) {
+			texture = texturesStorage.loadTexture(in);
+		} catch (IOException e) {
+			logger.warn("unable to parse uploaded texture", e);
+			throw newIllegalArgumentException("bad image");
+		}
+		character.getTextures().put(textureType, texture);
+		if (textureType == TextureType.SKIN) {
+			if ("slim".equals(textureModel)) {
+				character.setModel(ModelType.ALEX);
+			} else {
+				character.setModel(ModelType.STEVE);
+			}
+		}
+		return noContent().build();
+	}
+
 	@ExceptionHandler(ValidationException.class)
 	public void onMalformedRequest(ValidationException e) {
 		throw new ResponseStatusException(HttpStatus.BAD_REQUEST, null, e);
@@ -241,6 +283,31 @@ public class Router {
 	private Token authenticateAndConsume(String accessToken, @Nullable String clientToken, AvailableLevel availableLevel, Predicate<Token> checker) {
 		return tokenStore.authenticateAndConsume(accessToken, clientToken, availableLevel, checker)
 				.orElseThrow(() -> newForbiddenOperationException(m_invalid_token));
+	}
+
+	private Token processAuthorizationHeader(String header) {
+		if (header != null) {
+			header = header.trim();
+			if (header.startsWith("Bearer ")) {
+				header = header.substring("Bearer ".length());
+				var token = tokenStore.authenticate(header, null, AvailableLevel.COMPLETE);
+				if (token.isPresent()) {
+					return token.get();
+				}
+			}
+		}
+		throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+	}
+
+	private YggdrasilCharacter authTextureOperation(String uuid, TextureType textureType, String authorization) {
+		var token = processAuthorizationHeader(authorization);
+		var character = database.findCharacterByUUID(toUUID(uuid))
+				.orElseThrow(() -> newIllegalArgumentException(m_profile_not_found));
+		if (character.getOwner() != token.getUser())
+			throw newForbiddenOperationException(m_access_denied);
+		if (!character.getUploadableTextures().contains(textureType))
+			throw newForbiddenOperationException(m_access_denied);
+		return character;
 	}
 	// --------
 

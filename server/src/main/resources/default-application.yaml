@@ -13,6 +13,9 @@ yggdrasil:
         textures:
           skin: classpath:textures/eromanga/masamune_lzumi.png
           cape: "https://textures.minecraft.net/texture/5786fe99be377dfb6858859f926c4dbc995751e91cee373468c5fbf4865e7151" # Mojang cape
+        uploadable-textures:
+        - skin
+        - cape
     - email: test3@example.com
       password: 333333
       characters:
