@@ -11,6 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -88,6 +89,10 @@ public class Texture {
 
 		public Texture loadTexture(InputStream in) throws IOException {
 			var img = ImageIO.read(in);
+			if (img == null) {
+				throw new IIOException("No image found");
+			}
+
 			var hash = computeTextureHash(img);
 
 			var existent = textures.get(hash);
