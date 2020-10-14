@@ -3,9 +3,9 @@ server:
 yggdrasil:
   database:
     users:
-    - email: test1@to2mbn.org
+    - email: test1@example.com
       password: 111111
-    - email: test2@to2mbn.org
+    - email: test2@example.com
       password: 222222
       characters:
       - name: character1
@@ -13,7 +13,7 @@ yggdrasil:
         textures:
           skin: classpath:textures/eromanga/masamune_lzumi.png
           cape: "https://textures.minecraft.net/texture/5786fe99be377dfb6858859f926c4dbc995751e91cee373468c5fbf4865e7151" # Mojang cape
-    - email: test3@to2mbn.org
+    - email: test3@example.com
       password: 333333
       characters:
       - name: character2

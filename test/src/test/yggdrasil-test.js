@@ -16,7 +16,7 @@ const invalidAccessToken = "fa0e97770dec465aa3c5db8d70162857";
 const invalidClientToken = "fa0e97770dec465aa3c5db8d70162857";
 const nonexistentCharacterUUID = "992960dfc7a54afca041760004499434";
 const nonexistentCharacterName = "characterNotExists";
-const nonexistentUser = "notExists@to2mbn.org";
+const nonexistentUser = "notExists@example.com";
 const nonexistentUserPassword = "123456";
 const incorrectPassword = "incorrectPassword-_-";
 
