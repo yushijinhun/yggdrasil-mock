@@ -13,14 +13,14 @@
 	"author": "yushijinhun",
 	"license": "GPL-3.0",
 	"devDependencies": {
-		"eslint": "^7.9.0",
-		"eslint-plugin-mocha": "^8.0.0"
+		"eslint": "^7.32.0",
+		"eslint-plugin-mocha": "^9.0.0"
 	},
 	"dependencies": {
-		"chai": "^4.2.0",
-		"mocha": "^8.1.3",
+		"chai": "^4.3.4",
+		"mocha": "^9.1.1",
 		"node-rsa": "^1.1.1",
 		"pngjs-nozlib": "^1.0.0",
-		"supertest": "^4.0.2"
+		"supertest": "^6.1.6"
 	}
 }
